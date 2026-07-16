@@ -3,156 +3,106 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Physics Lab · Class 9 — Gravitation &amp; Sound</title>
+<title>PhysicsVerse — Class 9 Interactive Science</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <style>
-  .hero {
-    position: relative;
-    min-height: 92vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    overflow: hidden;
-    border-bottom: 1px solid var(--line);
-  }
-  .hero canvas#starfield {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-  }
-  .hero-content {
-    position: relative;
-    z-index: 2;
-    max-width: 720px;
-    margin: 0 28px 0 auto;
-    margin-left: max(28px, calc(50% - 590px));
-    padding-top: 40px;
-  }
-  .hero h1 {
-    font-size: clamp(2.4rem, 5.5vw, 4.1rem);
-    line-height: 1.04;
-    margin: 18px 0 20px;
-  }
-  .hero h1 em {
-    font-style: normal;
-    background: linear-gradient(90deg, var(--gravity), var(--sound));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .hero p.lede {
-    font-size: 1.08rem;
-    color: var(--text-muted);
-    max-width: 520px;
-    margin-bottom: 40px;
-  }
+.scroll-cue {
+  position: absolute;
+  bottom: 32px;
+  right: 52px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.scroll-cue .line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--aurora1), transparent);
+  animation: scl 1.8s ease-in-out infinite;
+}
+@keyframes scl { 0%,100%{opacity:0.3;transform:scaleY(0.6)} 50%{opacity:1;transform:scaleY(1)} }
 
-  .cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 22px;
-    max-width: 900px;
-  }
-  @media (max-width: 720px) {
-    .cards { grid-template-columns: 1fr; }
-  }
+.explore-section {
+  padding: 100px 52px;
+}
+.explore-section h2 {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  margin-bottom: 10px;
+}
+.explore-section > p {
+  color: var(--muted);
+  margin-bottom: 52px;
+  font-size: 0.96rem;
+}
+.big-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 780px) { .big-cards { grid-template-columns: 1fr; } }
 
-  .topic-card {
-    position: relative;
-    display: block;
-    border-radius: var(--radius);
-    border: 1px solid var(--line);
-    background: var(--bg-panel);
-    overflow: hidden;
-    padding: 0;
-    transition: transform .25s cubic-bezier(.2,.8,.2,1), border-color .25s;
-  }
-  .topic-card:hover { transform: translateY(-4px); }
-  .topic-card:hover.g { border-color: var(--gravity); }
-  .topic-card:hover.s { border-color: var(--sound); }
+.big-card {
+  display: block;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  overflow: hidden;
+  transition: transform .28s cubic-bezier(.2,.8,.2,1), border-color .25s;
+  position: relative;
+}
+.big-card:hover { transform: translateY(-6px); }
+.big-card.g:hover { border-color: var(--aurora1); }
+.big-card.s:hover { border-color: var(--gold); }
 
-  .topic-card .preview {
-    height: 190px;
-    background: var(--bg-deep);
-    border-bottom: 1px solid var(--line);
-  }
-  .topic-card .preview canvas { width: 100%; height: 100%; }
+.big-card .preview {
+  height: 220px;
+  background: var(--void);
+  position: relative;
+  overflow: hidden;
+}
+.big-card .preview canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
 
-  .topic-card .body {
-    padding: 22px 24px 26px;
-  }
-  .topic-card .kicker {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-  .topic-card.g .kicker { color: var(--gravity); }
-  .topic-card.s .kicker { color: var(--sound); }
-
-  .topic-card h2 {
-    font-size: 1.5rem;
-    margin: 8px 0 8px;
-  }
-  .topic-card p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-bottom: 16px;
-  }
-  .topic-card .go {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .topic-card.g .go { color: var(--gravity); }
-  .topic-card.s .go { color: var(--sound); }
-  .topic-card .go .arrow { transition: transform .2s; }
-  .topic-card:hover .go .arrow { transform: translateX(4px); }
-
-  .intro-row {
-    max-width: 900px;
-    display: flex;
-    gap: 40px;
-    margin-bottom: 34px;
-    flex-wrap: wrap;
-  }
-  .intro-row .stat {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--text-faint);
-  }
-  .intro-row .stat b {
-    display: block;
-    font-family: var(--font-display);
-    font-size: 1.3rem;
-    color: var(--text-primary);
-    font-weight: 600;
-  }
-
-  .scroll-hint {
-    position: absolute;
-    bottom: 28px;
-    left: max(28px, calc(50% - 590px));
-    z-index: 2;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--text-faint);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .scroll-hint .line {
-    width: 28px; height: 1px; background: var(--text-faint);
-  }
+.big-card .body {
+  padding: 28px 30px 32px;
+}
+.big-card .kicker {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.big-card.g .kicker { color: var(--aurora1); }
+.big-card.s .kicker { color: var(--gold); }
+.big-card h3 { font-size: 1.5rem; margin-bottom: 8px; }
+.big-card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+.big-card .arrow-link {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: gap .2s;
+}
+.big-card.g .arrow-link { color: var(--aurora1); }
+.big-card.s .arrow-link { color: var(--gold); }
+.big-card:hover .arrow-link { gap: 14px; }
 </style>
 </head>
 <body>
 
-<header class="topnav">
-  <div class="brand"><span class="dot"></span> Physics&nbsp;Lab</div>
-  <nav>
+<header class="nav">
+  <span class="nav-brand">PhysicsVerse</span>
+  <nav class="nav-links">
     <a href="index.html" class="active">Home</a>
     <a href="gravitation.html">Gravitation</a>
     <a href="sound.html">Sound</a>
@@ -160,172 +110,150 @@
 </header>
 
 <section class="hero">
-  <canvas id="starfield"></canvas>
+  <canvas id="hero-bg"></canvas>
   <div class="hero-content">
-    <span class="eyebrow">Class 9 · Physics Exhibit</span>
-    <h1>Feel the forces you<br><em>can't normally see.</em></h1>
-    <p class="lede">Two ideas, twelve live simulations, zero textbook walls of text. Drag a planet. Ring a bell. Watch the invisible become obvious.</p>
-
-    <div class="intro-row">
-      <div class="stat"><b>2</b>Core topics</div>
-      <div class="stat"><b>10+</b>Interactive sims</div>
-      <div class="stat"><b>0</b>Boring paragraphs</div>
-    </div>
-
-    <div class="cards">
-      <a href="gravitation.html" class="topic-card g">
-        <div class="preview"><canvas id="prev-gravity"></canvas></div>
-        <div class="body">
-          <span class="kicker">Topic 01</span>
-          <h2>Gravitation</h2>
-          <p>Orbits, falling apples, satellites, and the pull between any two masses.</p>
-          <span class="go">Enter the simulation <span class="arrow">→</span></span>
-        </div>
-      </a>
-      <a href="sound.html" class="topic-card s">
-        <div class="preview"><canvas id="prev-sound"></canvas></div>
-        <div class="body">
-          <span class="kicker">Topic 02</span>
-          <h2>Sound</h2>
-          <p>Vibrations, waves through air, pitch, loudness, echoes, and your ear.</p>
-          <span class="go">Enter the simulation <span class="arrow">→</span></span>
-        </div>
-      </a>
+    <p class="hero-eyebrow">Class 9 · Interactive Science Exhibit</p>
+    <h1><span class="gradient">Physics</span><br>you can feel.</h1>
+    <p>Not a textbook. A universe you interact with — drag planets, drop masses, shout at walls, listen to waves.</p>
+    <div class="topic-cards">
+      <a href="gravitation.html" class="topic-card g"><span class="dot"></span>Gravitation</a>
+      <a href="sound.html" class="topic-card s"><span class="dot"></span>Sound</a>
     </div>
   </div>
-  <div class="scroll-hint"><span class="line"></span> pick a topic to begin</div>
+  <div class="scroll-cue"><div class="line"></div>Explore</div>
 </section>
 
-<footer>Built for Class 9 Physics — Gravitation &amp; Sound · An interactive exhibit, not a textbook</footer>
+<section class="explore-section">
+  <h2>Choose your experiment</h2>
+  <p>Two fundamental forces of nature. Ten interactive simulations. Zero boring paragraphs.</p>
+  <div class="big-cards">
+    <a href="gravitation.html" class="big-card g">
+      <div class="preview"><canvas id="prev-g"></canvas></div>
+      <div class="body">
+        <p class="kicker">Topic 01</p>
+        <h3>Gravitation</h3>
+        <p>Drag planets around their star. Drop objects with and without air. Launch a satellite into orbit. Warp spacetime.</p>
+        <span class="arrow-link">Enter simulation →</span>
+      </div>
+    </a>
+    <a href="sound.html" class="big-card s">
+      <div class="preview"><canvas id="prev-s"></canvas></div>
+      <div class="body">
+        <p class="kicker">Topic 02</p>
+        <h3>Sound</h3>
+        <p>Strike a tuning fork. Watch compression waves race through air. Adjust pitch and loudness live. Shout at a wall.</p>
+        <span class="arrow-link">Enter simulation →</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<footer>PhysicsVerse · Class 9 Interactive Science · Built for curious minds</footer>
 
 <script>
-/* ---------- Starfield background ---------- */
+/* ─── Hero: 3D deep-space starfield with parallax ─── */
 (function(){
-  const c = document.getElementById('starfield');
+  const c = document.getElementById('hero-bg');
   const ctx = c.getContext('2d');
-  let w,h,stars=[];
-  function size(){
-    w = c.width = c.offsetWidth * devicePixelRatio;
-    h = c.height = c.offsetHeight * devicePixelRatio;
-  }
+  let W,H,stars=[];
+  let mx=0,my=0;
+  window.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5)*2;my=(e.clientY/window.innerHeight-.5)*2;});
   function init(){
-    size();
-    stars = [];
-    const n = Math.floor((w*h)/9000);
-    for(let i=0;i<n;i++){
-      stars.push({
-        x: Math.random()*w, y: Math.random()*h,
-        r: Math.random()*1.4+0.3,
-        tw: Math.random()*Math.PI*2,
-        speed: Math.random()*0.4+0.1
-      });
-    }
+    W=c.width=c.offsetWidth*devicePixelRatio;
+    H=c.height=c.offsetHeight*devicePixelRatio;
+    stars=[];
+    for(let i=0;i<320;i++) stars.push({x:Math.random()*W,y:Math.random()*H,z:Math.random()*3+0.2,t:Math.random()*Math.PI*2,s:Math.random()*.5+.3});
   }
-  function draw(t){
-    ctx.clearRect(0,0,w,h);
-    // subtle nebula glow
-    const grad = ctx.createRadialGradient(w*0.75,h*0.25,0,w*0.75,h*0.25,w*0.6);
-    grad.addColorStop(0,'rgba(139,157,255,0.08)');
-    grad.addColorStop(1,'rgba(139,157,255,0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0,0,w,h);
-    const grad2 = ctx.createRadialGradient(w*0.15,h*0.85,0,w*0.15,h*0.85,w*0.5);
-    grad2.addColorStop(0,'rgba(255,180,84,0.06)');
-    grad2.addColorStop(1,'rgba(255,180,84,0)');
-    ctx.fillStyle = grad2;
-    ctx.fillRect(0,0,w,h);
-
+  window.addEventListener('resize',init); init();
+  let t=0;
+  function draw(){
+    t+=.007;
+    ctx.fillStyle='rgba(3,4,10,0.25)';
+    ctx.fillRect(0,0,W,H);
+    // nebula blobs
+    [{cx:.72,cy:.22,r:.55,c:'rgba(108,143,255,0.07)'},{cx:.15,cy:.7,r:.45,c:'rgba(167,139,250,0.06)'},{cx:.5,cy:.5,r:.35,c:'rgba(251,191,36,0.04)'}].forEach(n=>{
+      const g=ctx.createRadialGradient(W*n.cx,H*n.cy,0,W*n.cx,H*n.cy,W*n.r);
+      g.addColorStop(0,n.c); g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    });
     for(const s of stars){
-      const a = 0.5 + 0.5*Math.sin(t*0.001*s.speed + s.tw);
-      ctx.globalAlpha = 0.3 + a*0.7;
-      ctx.fillStyle = '#eef1fb';
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r*devicePixelRatio, 0, Math.PI*2);
-      ctx.fill();
+      const px = s.x + mx*s.z*18;
+      const py = s.y + my*s.z*18;
+      const a = .4+.6*Math.abs(Math.sin(t*s.s+s.t));
+      ctx.globalAlpha=a;
+      ctx.fillStyle=s.z>2?'#a8b4ff':s.z>1.2?'#ffffff':'#c8d4ff';
+      ctx.beginPath(); ctx.arc(px%W,py%H,s.z*.9*devicePixelRatio,0,Math.PI*2); ctx.fill();
     }
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha=1;
     requestAnimationFrame(draw);
   }
-  window.addEventListener('resize', init);
-  init();
   requestAnimationFrame(draw);
 })();
 
-/* ---------- Mini gravity preview: two planets orbiting ---------- */
+/* ─── Preview: Gravity (solar system) ─── */
 (function(){
-  const c = document.getElementById('prev-gravity');
-  const ctx = c.getContext('2d');
-  function size(){ c.width = c.offsetWidth*devicePixelRatio; c.height = c.offsetHeight*devicePixelRatio; }
-  size(); window.addEventListener('resize', size);
-  let t = 0;
+  const c=document.getElementById('prev-g'), ctx=c.getContext('2d');
+  function sz(){c.width=c.offsetWidth*devicePixelRatio;c.height=c.offsetHeight*devicePixelRatio;}
+  sz(); window.addEventListener('resize',sz);
+  const planets=[
+    {a:.14,b:.10,period:.4,color:'#b0aaff',r:2.8},
+    {a:.22,b:.17,period:.9,color:'#7fb2ff',r:3.8},
+    {a:.32,b:.25,period:1.5,color:'#e07a5f',r:3},
+    {a:.42,b:.32,period:3,color:'#e8d0a9',r:6,rings:true},
+  ];
+  let t=0;
   function draw(){
-    t += 0.012;
-    const w = c.width, h = c.height;
+    t+=.011;
+    const w=c.width,h=c.height;
     ctx.clearRect(0,0,w,h);
-    const cx = w/2, cy = h/2;
-
+    const cx=w/2,cy=h/2,sc=Math.min(w,h);
     // sun
-    const sunR = h*0.09;
-    const sg = ctx.createRadialGradient(cx,cy,0,cx,cy,sunR*3);
-    sg.addColorStop(0,'rgba(255,200,120,0.9)');
-    sg.addColorStop(1,'rgba(255,200,120,0)');
-    ctx.fillStyle = sg;
-    ctx.beginPath(); ctx.arc(cx,cy,sunR*3,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#ffd58a';
-    ctx.beginPath(); ctx.arc(cx,cy,sunR,0,Math.PI*2); ctx.fill();
-
-    const orbits = [
-      {rx: w*0.28, ry: h*0.20, speed:1.0, r: h*0.028, color:'#8b9dff'},
-      {rx: w*0.40, ry: h*0.30, speed:0.55, r: h*0.02, color:'#5eead4'},
-    ];
-    for(const o of orbits){
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.ellipse(cx,cy,o.rx,o.ry,0,0,Math.PI*2); ctx.stroke();
-      const a = t*o.speed;
-      const px = cx + Math.cos(a)*o.rx;
-      const py = cy + Math.sin(a)*o.ry;
-      ctx.fillStyle = o.color;
-      ctx.beginPath(); ctx.arc(px,py,o.r,0,Math.PI*2); ctx.fill();
+    const sg=ctx.createRadialGradient(cx,cy,0,cx,cy,sc*.06);
+    sg.addColorStop(0,'rgba(255,230,140,1)');sg.addColorStop(.5,'rgba(255,160,40,.4)');sg.addColorStop(1,'transparent');
+    ctx.fillStyle=sg;ctx.beginPath();ctx.arc(cx,cy,sc*.06,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffe88a';ctx.beginPath();ctx.arc(cx,cy,sc*.028,0,Math.PI*2);ctx.fill();
+    for(const p of planets){
+      const rx=p.a*sc,ry=p.b*sc;
+      ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);ctx.stroke();
+      const a=t/p.period*Math.PI*2;
+      const px=cx+Math.cos(a)*rx,py=cy+Math.sin(a)*ry;
+      // 3D sphere shading
+      const gr=ctx.createRadialGradient(px-p.r*.3*devicePixelRatio,py-p.r*.3*devicePixelRatio,0,px,py,p.r*devicePixelRatio*1.1);
+      gr.addColorStop(0,'rgba(255,255,255,0.4)');gr.addColorStop(.3,p.color);gr.addColorStop(1,'rgba(0,0,0,0.7)');
+      ctx.fillStyle=gr;ctx.beginPath();ctx.arc(px,py,p.r*devicePixelRatio,0,Math.PI*2);ctx.fill();
     }
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
 })();
 
-/* ---------- Mini sound preview: waveform ---------- */
+/* ─── Preview: Sound waveform ─── */
 (function(){
-  const c = document.getElementById('prev-sound');
-  const ctx = c.getContext('2d');
-  function size(){ c.width = c.offsetWidth*devicePixelRatio; c.height = c.offsetHeight*devicePixelRatio; }
-  size(); window.addEventListener('resize', size);
-  let t = 0;
+  const c=document.getElementById('prev-s'),ctx=c.getContext('2d');
+  function sz(){c.width=c.offsetWidth*devicePixelRatio;c.height=c.offsetHeight*devicePixelRatio;}
+  sz(); window.addEventListener('resize',sz);
+  let t=0;
   function draw(){
-    t += 0.05;
-    const w = c.width, h = c.height, cy = h/2;
+    t+=.06;
+    const w=c.width,h=c.height,cy=h/2;
     ctx.clearRect(0,0,w,h);
-
-    for(let ring=0; ring<3; ring++){
-      const phase = (t*40 - ring*60) % (w*0.7);
-      if(phase < 0) continue;
-      ctx.strokeStyle = `rgba(255,180,84,${0.5 - ring*0.15})`;
-      ctx.lineWidth = 2*devicePixelRatio;
-      ctx.beginPath();
-      ctx.arc(w*0.12, cy, phase, -1.1, 1.1);
-      ctx.stroke();
+    // concentric rings
+    for(let i=0;i<4;i++){
+      const r=(t*50+i*70)%(w*.7);
+      ctx.strokeStyle=`rgba(251,191,36,${.5-i*.1})`;
+      ctx.lineWidth=2*devicePixelRatio;
+      ctx.beginPath();ctx.arc(w*.12,cy,r,-1.3,1.3);ctx.stroke();
     }
-    // source
-    ctx.fillStyle = '#ffb454';
-    ctx.beginPath(); ctx.arc(w*0.12, cy, h*0.05, 0, Math.PI*2); ctx.fill();
-
-    // waveform trace
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(w*.12,cy,7*devicePixelRatio,0,Math.PI*2);ctx.fill();
+    // wave
+    ctx.strokeStyle='rgba(251,191,36,0.9)';ctx.lineWidth=2.5*devicePixelRatio;
     ctx.beginPath();
-    ctx.strokeStyle = '#ffb454';
-    ctx.lineWidth = 2.5*devicePixelRatio;
-    for(let x=w*0.3; x<w*0.95; x+=4*devicePixelRatio){
-      const freq = 0.05, amp = h*0.14;
-      const y = cy + Math.sin((x*freq) - t*3)*amp*Math.exp(-(x-w*0.3)/(w*0.8));
-      if(x===w*0.3) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    for(let x=w*.28;x<w*.95;x+=3){
+      const prog=(x-w*.28)/(w*.67);
+      const amp=h*.16*(1-prog*.5);
+      const y=cy+Math.sin(x*.04-t*2.5)*amp;
+      x===w*.28?ctx.moveTo(x,y):ctx.lineTo(x,y);
     }
     ctx.stroke();
     requestAnimationFrame(draw);
