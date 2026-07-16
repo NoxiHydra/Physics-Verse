@@ -1,382 +1,663 @@
-/* ==========================================================================
-   Sound simulations
-   ========================================================================== */
+/* ==========================================================
+   PhysicsVerse — Sound Simulations
+   ========================================================== */
 
-function setupCanvas(canvas) {
-  const ctx = canvas.getContext('2d');
+function mkCanvas(id) {
+  const c = document.getElementById(id);
+  const ctx = c.getContext('2d');
+  const stage = c.closest('.sim-stage');
   function resize() {
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * devicePixelRatio;
-    canvas.height = rect.height * devicePixelRatio;
+    const r = stage.getBoundingClientRect();
+    c.width = r.width * devicePixelRatio;
+    c.height = r.height * devicePixelRatio;
   }
   resize();
-  window.addEventListener('resize', resize);
-  return ctx;
+  const ro = new ResizeObserver(resize);
+  ro.observe(stage);
+  return { c, ctx };
 }
 
 let audioCtx = null;
-function getAudioCtx(){
-  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function ac() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 
-/* =====================================================================
-   1. Vibrating tuning fork
-   ===================================================================== */
+/* ============================================================
+   SIM 1 — Vibrating Tuning Fork
+   ============================================================ */
 (function(){
-  const canvas = document.getElementById('c-vibrate');
-  const ctx = setupCanvas(canvas);
-  const stage = document.getElementById('c-vibrate-stage');
-  let strikeT = -10, ripples = [];
+  const { c, ctx } = mkCanvas('c-vib');
+  let strikeT = -99, ripples = [];
+  const statusEl = document.getElementById('vib-status');
 
-  function strike(){
+  function strike() {
     strikeT = 0;
-    ripples.push({ r: 0, life: 1 });
+    ripples = [];
+    statusEl.textContent = 'Vibrating — watch the wavefronts spread outward.';
+    // actual sound
+    try {
+      const a = ac();
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.frequency.value = 440;
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.18, a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 1.8);
+      o.connect(g); g.connect(a.destination);
+      o.start(); o.stop(a.currentTime + 1.8);
+    } catch(e) {}
   }
-  document.getElementById('vibrate-strike').addEventListener('click', strike);
-  stage.addEventListener('click', strike);
 
-  function draw(){
-    strikeT += 1/60;
-    const w = canvas.width, h = canvas.height;
-    ctx.clearRect(0,0,w,h);
-    const cx = w*0.32, cy = h*0.5;
+  document.getElementById('vib-strike').addEventListener('click', strike);
+  document.getElementById('stage-vib').addEventListener('click', strike);
+
+  let t = 0;
+  function draw() {
+    t += 1/60;
+    if (strikeT >= 0) strikeT += 1/60;
+    const w = c.width, h = c.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // bg
+    ctx.fillStyle = '#030408';
+    ctx.fillRect(0, 0, w, h);
+
+    const forkX = w * 0.28, forkY = h * 0.5;
 
     // ripples
-    ripples.forEach(rp=>{
-      rp.r += 3.2*devicePixelRatio;
-      rp.life -= 0.012;
-    });
-    ripples = ripples.filter(rp=>rp.life>0);
-    for(const rp of ripples){
-      ctx.strokeStyle = `rgba(255,180,84,${rp.life*0.6})`;
-      ctx.lineWidth = 2*devicePixelRatio;
-      ctx.beginPath(); ctx.arc(cx,cy,rp.r,0,Math.PI*2); ctx.stroke();
+    if (strikeT >= 0 && strikeT < 3) {
+      if (strikeT * 60 % 14 < 1.5) ripples.push({ r: 0, born: strikeT });
     }
-
-    // decaying vibration amplitude
-    const amp = strikeT < 2 ? Math.max(0, (1 - strikeT/2)) * 14*devicePixelRatio : 0;
-    const wob = Math.sin(strikeT*40) * amp;
-
-    // tuning fork: handle + two prongs
-    ctx.strokeStyle = '#dbe1f5';
-    ctx.lineWidth = 5*devicePixelRatio;
-    ctx.lineCap = 'round';
-    const baseY = cy + 55*devicePixelRatio;
-    // handle
-    ctx.beginPath(); ctx.moveTo(cx, baseY); ctx.lineTo(cx, baseY+34*devicePixelRatio); ctx.stroke();
-    // prongs, deflect oppositely
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx-16*devicePixelRatio+wob, baseY-70*devicePixelRatio);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx, baseY);
-    ctx.lineTo(cx+16*devicePixelRatio-wob, baseY-70*devicePixelRatio);
-    ctx.stroke();
-
-    // waveform readout to the right
-    const gx = w*0.6, gw = w*0.34, gy = h*0.5;
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(gx+gw,gy); ctx.stroke();
-    ctx.strokeStyle = '#ffb454';
-    ctx.lineWidth = 2*devicePixelRatio;
-    ctx.beginPath();
-    for(let x=0; x<=gw; x+=3*devicePixelRatio){
-      const localT = strikeT - (x/gw)*1.2;
-      const localAmp = localT>0 && localT<2 ? Math.max(0,(1-localT/2))*20*devicePixelRatio : 0;
-      const y = gy + Math.sin(localT*40)*localAmp;
-      if(x===0) ctx.moveTo(gx+x,y); else ctx.lineTo(gx+x,y);
-    }
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = `${11*devicePixelRatio}px 'JetBrains Mono', monospace`;
-    ctx.fillText('vibration trace →', gx, gy - 30*devicePixelRatio);
-
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
-})();
-
-/* =====================================================================
-   2. Sound through particles (longitudinal wave)
-   ===================================================================== */
-(function(){
-  const canvas = document.getElementById('c-particles');
-  const ctx = setupCanvas(canvas);
-  let playing = true, t = 0;
-  document.getElementById('particles-toggle').addEventListener('click', e=>{
-    playing = !playing;
-    e.target.textContent = playing ? 'Pause' : 'Resume';
-  });
-
-  const rows = 6, cols = 26;
-  function draw(){
-    if(playing) t += 0.05;
-    const w = canvas.width, h = canvas.height;
-    ctx.clearRect(0,0,w,h);
-
-    const marginX = w*0.08, marginY = h*0.15;
-    const spanX = w - marginX*2, spanY = h - marginY*2;
-    const baseSpacing = spanX/(cols-1);
-
-    for(let j=0;j<rows;j++){
-      for(let i=0;i<cols;i++){
-        const baseX = marginX + i*baseSpacing;
-        const y = marginY + (spanY/(rows-1))*j;
-        const disp = Math.sin((i*0.5) - t) * baseSpacing*0.35;
-        const x = baseX + disp;
-
-        const isHighlight = (j===Math.floor(rows/2) && i===Math.floor(cols/2));
-        ctx.fillStyle = isHighlight ? '#5eead4' : 'rgba(255,180,84,0.55)';
-        ctx.beginPath();
-        ctx.arc(x, y, (isHighlight?5:2.6)*devicePixelRatio, 0, Math.PI*2);
-        ctx.fill();
-      }
-    }
-
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = `${11*devicePixelRatio}px 'JetBrains Mono', monospace`;
-    ctx.fillText('teal particle: jiggles in place only', marginX, h-14*devicePixelRatio);
-    ctx.fillText('wave direction →', marginX, marginY-14*devicePixelRatio);
-
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
-})();
-
-/* =====================================================================
-   3. Amplitude & frequency (with optional tone)
-   ===================================================================== */
-(function(){
-  const canvas = document.getElementById('c-wave');
-  const ctx = setupCanvas(canvas);
-  let amp = 50, freq = 3, t = 0, osc=null, gain=null;
-
-  document.getElementById('amp').addEventListener('input', e=>{
-    amp = parseFloat(e.target.value);
-    document.getElementById('amp-val').textContent = amp;
-    if(gain) gain.gain.value = (amp/100)*0.18;
-  });
-  document.getElementById('freq').addEventListener('input', e=>{
-    freq = parseFloat(e.target.value);
-    document.getElementById('freq-val').textContent = freq.toFixed(1);
-    if(osc) osc.frequency.value = 150 + freq*90;
-  });
-
-  const soundBtn = document.getElementById('wave-sound');
-  soundBtn.addEventListener('click', ()=>{
-    const ac = getAudioCtx();
-    if(osc){
-      osc.stop(); osc=null; gain=null;
-      soundBtn.textContent = '🔊 Play tone';
-      return;
-    }
-    osc = ac.createOscillator();
-    gain = ac.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 150 + freq*90;
-    gain.gain.value = (amp/100)*0.18;
-    osc.connect(gain); gain.connect(ac.destination);
-    osc.start();
-    soundBtn.textContent = '🔇 Stop tone';
-  });
-
-  function draw(){
-    t += 0.05;
-    const w = canvas.width, h = canvas.height, cy = h/2;
-    ctx.clearRect(0,0,w,h);
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.stroke();
-
-    ctx.strokeStyle = '#ffb454';
-    ctx.lineWidth = 3*devicePixelRatio;
-    ctx.beginPath();
-    for(let x=0;x<w;x+=2*devicePixelRatio){
-      const A = (amp/100) * h*0.36;
-      const F = freq;
-      const y = cy + Math.sin((x*0.02*F) - t*3)*A;
-      if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    }
-    ctx.stroke();
-
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
-})();
-
-/* =====================================================================
-   4. Echo
-   ===================================================================== */
-(function(){
-  const canvas = document.getElementById('c-echo');
-  const ctx = setupCanvas(canvas);
-  let wallDist = 30;
-  let pulses = []; // {x, dir, born}
-  let t = 0;
-  const speedPxPerM = 6; // visual speed scale
-  const status = document.getElementById('echo-status');
-
-  document.getElementById('echo-dist').addEventListener('input', e=>{
-    wallDist = parseFloat(e.target.value);
-    document.getElementById('echo-dist-val').textContent = wallDist+' m';
-  });
-  document.getElementById('echo-shout').addEventListener('click', ()=>{
-    pulses.push({ dist: 0, bounced:false, born:t });
-    const threshold = 17;
-    status.textContent = wallDist >= threshold
-      ? `Clear echo expected — wall is ${wallDist} m away (> 17 m).`
-      : `Too close — echo will blend into the original sound (< 17 m).`;
-  });
-
-  function draw(){
-    t += 1/60;
-    const w = canvas.width, h = canvas.height, cy = h*0.55;
-    ctx.clearRect(0,0,w,h);
-
-    const srcX = w*0.1;
-    const wallX = w*0.1 + (wallDist/60)*w*0.8;
-
-    // source
-    ctx.fillStyle = '#ffb454';
-    ctx.beginPath(); ctx.arc(srcX, cy, 8*devicePixelRatio, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.5)';
-    ctx.font = `${11*devicePixelRatio}px 'JetBrains Mono', monospace`;
-    ctx.fillText('you', srcX-8*devicePixelRatio, cy+26*devicePixelRatio);
-
-    // wall
-    ctx.fillStyle = '#5c6688';
-    ctx.fillRect(wallX-4*devicePixelRatio, cy-70*devicePixelRatio, 8*devicePixelRatio, 140*devicePixelRatio);
-    ctx.fillStyle='rgba(255,255,255,0.5)';
-    ctx.fillText('wall', wallX-10*devicePixelRatio, cy+90*devicePixelRatio);
-
-    const pxPerM = (wallX-srcX)/Math.max(wallDist,1);
-
-    pulses.forEach(p=>{
-      p.dist += speedPxPerM * (pxPerM/6) * (1/1);
-    });
-
-    for(const p of pulses){
-      let x;
-      if(!p.bounced){
-        x = srcX + p.dist;
-        if(x >= wallX){ p.bounced = true; p.dist = 0; }
-      } else {
-        x = wallX - p.dist;
-      }
-      const alpha = p.bounced ? 0.9 : 0.55;
-      ctx.strokeStyle = `rgba(94,234,212,${alpha})`;
-      ctx.lineWidth = 2*devicePixelRatio;
+    ripples = ripples.filter(rp => rp.r < Math.max(w, h));
+    for (const rp of ripples) {
+      rp.r += 4.5 * devicePixelRatio;
+      const age = strikeT - rp.born;
+      const alpha = Math.max(0, 0.7 - age * 0.3);
+      ctx.strokeStyle = `rgba(251,191,36,${alpha})`;
+      ctx.lineWidth = (2 - age * 0.6) * devicePixelRatio;
       ctx.beginPath();
-      ctx.arc(x, cy, 10*devicePixelRatio, -1.3, 1.3);
+      ctx.arc(forkX, forkY, rp.r, 0, Math.PI * 2);
       ctx.stroke();
     }
-    pulses = pulses.filter(p => !(p.bounced && (wallX-p.dist) < srcX-10));
+
+    // waveform trace
+    const decayAmp = strikeT >= 0 ? Math.max(0, 1 - strikeT / 2.5) : 0;
+    ctx.strokeStyle = 'rgba(251,191,36,0.7)';
+    ctx.lineWidth = 2 * devicePixelRatio;
+    ctx.beginPath();
+    const wx0 = forkX + 12 * devicePixelRatio;
+    for (let x = wx0; x < w * 0.94; x += 3) {
+      const phase = (x - wx0) / (w * 0.6);
+      const localAmp = decayAmp * Math.exp(-phase * 1.2) * h * 0.14;
+      const y = forkY + Math.sin((x * 0.045) - strikeT * 26) * localAmp;
+      x === wx0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // tuning fork
+    const vibAmp = decayAmp * 11 * devicePixelRatio;
+    const wob = Math.sin(strikeT * 40) * vibAmp;
+    ctx.strokeStyle = '#d0d8f0';
+    ctx.lineWidth = 5 * devicePixelRatio;
+    ctx.lineCap = 'round';
+
+    const handleTop = forkY + 30 * devicePixelRatio;
+    ctx.beginPath();
+    ctx.moveTo(forkX, handleTop);
+    ctx.lineTo(forkX, handleTop + 50 * devicePixelRatio);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(forkX, handleTop);
+    ctx.bezierCurveTo(forkX - 5 * devicePixelRatio, handleTop - 30 * devicePixelRatio, forkX - 14 * devicePixelRatio + wob, handleTop - 60 * devicePixelRatio, forkX - 14 * devicePixelRatio + wob, handleTop - 80 * devicePixelRatio);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(forkX, handleTop);
+    ctx.bezierCurveTo(forkX + 5 * devicePixelRatio, handleTop - 30 * devicePixelRatio, forkX + 14 * devicePixelRatio - wob, handleTop - 60 * devicePixelRatio, forkX + 14 * devicePixelRatio - wob, handleTop - 80 * devicePixelRatio);
+    ctx.stroke();
+
+    // Particle glow at fork tip
+    if (decayAmp > 0.05) {
+      const pg = ctx.createRadialGradient(forkX, handleTop - 80 * devicePixelRatio, 0, forkX, handleTop - 80 * devicePixelRatio, 22 * devicePixelRatio);
+      pg.addColorStop(0, `rgba(251,191,36,${decayAmp * 0.6})`);
+      pg.addColorStop(1, 'transparent');
+      ctx.fillStyle = pg;
+      ctx.fillRect(forkX - 30 * devicePixelRatio, handleTop - 110 * devicePixelRatio, 60 * devicePixelRatio, 60 * devicePixelRatio);
+    }
+
+    if (strikeT > 3.5 && ripples.length === 0) {
+      statusEl.textContent = 'Fork still again. Strike to repeat.';
+    }
 
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
 })();
 
-/* =====================================================================
-   5. Human ear
-   ===================================================================== */
+/* ============================================================
+   SIM 2 — Particle Propagation (Longitudinal Wave)
+   ============================================================ */
 (function(){
-  const canvas = document.getElementById('c-ear');
-  const ctx = setupCanvas(canvas);
-  let progress = -1;
-  const status = document.getElementById('ear-status');
-  const stages = ['Outer ear (pinna) funnels sound in', 'Eardrum vibrates', 'Ossicles amplify the vibration', 'Cochlea turns it into nerve signals', 'Signal reaches the brain'];
+  const { c, ctx } = mkCanvas('c-prop');
+  let playing = true, freq = 1.5, t = 0;
 
-  document.getElementById('ear-send').addEventListener('click', ()=>{
-    progress = 0;
+  document.getElementById('prop-freq').addEventListener('input', e => {
+    freq = parseFloat(e.target.value);
+    document.getElementById('prop-freq-v').textContent = freq.toFixed(1);
+  });
+  document.getElementById('prop-pause').addEventListener('click', e => {
+    playing = !playing;
+    e.target.textContent = playing ? '⏸ Pause' : '▶ Resume';
   });
 
-  function draw(){
-    const w = canvas.width, h = canvas.height, cy = h*0.5;
-    ctx.clearRect(0,0,w,h);
+  function draw() {
+    if (playing) t += 0.035 * freq;
+    const w = c.width, h = c.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#030408';
+    ctx.fillRect(0, 0, w, h);
 
-    // simplified ear canal path (a curve from left to right)
-    const points = [
-      {x:w*0.06, y:cy}, {x:w*0.22, y:cy}, // pinna to canal
-      {x:w*0.42, y:cy}, // eardrum
-      {x:w*0.55, y:cy-h*0.12}, {x:w*0.66, y:cy+h*0.10}, // ossicles zig-zag
-      {x:w*0.86, y:cy}, // cochlea
+    // 3D-style source ball
+    const sx = w * 0.07, sy = h / 2;
+    const sR = Math.min(w, h) * 0.045;
+    const srcPulse = 1 + 0.12 * Math.sin(t * 2.5);
+    const sg = ctx.createRadialGradient(sx - sR * 0.3, sy - sR * 0.3, 0, sx, sy, sR * srcPulse);
+    sg.addColorStop(0, 'rgba(255,220,120,1)');
+    sg.addColorStop(0.4, '#f97316');
+    sg.addColorStop(1, 'rgba(180,60,0,0.7)');
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.arc(sx, sy, sR * srcPulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    // particles grid
+    const rows = 8, cols = 30;
+    const mx = w * 0.15, my = h * 0.12;
+    const spanX = w * 0.82, spanY = h * 0.76;
+    const baseSpX = spanX / (cols - 1);
+
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++) {
+        const baseX = mx + i * baseSpX;
+        const y = my + (spanY / (rows - 1)) * j;
+        const disp = Math.sin(i * 0.45 - t * 2.2) * baseSpX * 0.38;
+        const x = baseX + disp;
+        const isHL = (j === Math.floor(rows / 2) && i === Math.floor(cols * 0.5));
+        const density = 0.5 + 0.5 * Math.sin(i * 0.45 - t * 2.2);
+        const alpha = 0.35 + density * 0.55;
+
+        if (isHL) {
+          const pg = ctx.createRadialGradient(x - 3 * devicePixelRatio, y - 3 * devicePixelRatio, 0, x, y, 7 * devicePixelRatio);
+          pg.addColorStop(0, '#a0fff5');
+          pg.addColorStop(1, 'rgba(45,212,191,0.4)');
+          ctx.fillStyle = pg;
+          ctx.beginPath(); ctx.arc(x, y, 7 * devicePixelRatio, 0, Math.PI * 2); ctx.fill();
+        } else {
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath(); ctx.arc(x, y, 2.8 * devicePixelRatio, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    // label
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = `${10 * devicePixelRatio}px 'JetBrains Mono', monospace`;
+    ctx.fillText('← teal particle stays in place →', mx + spanX * 0.25, h - 16 * devicePixelRatio);
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ============================================================
+   SIM 3 — Amplitude & Frequency
+   ============================================================ */
+(function(){
+  const { c, ctx } = mkCanvas('c-wave');
+  let amp = 50, freq = 3, t = 0, osc = null, gain = null, playing = false;
+
+  document.getElementById('amp').addEventListener('input', e => {
+    amp = parseFloat(e.target.value);
+    document.getElementById('amp-v').textContent = amp;
+    if (gain) gain.gain.value = (amp / 100) * 0.2;
+  });
+  document.getElementById('freq').addEventListener('input', e => {
+    freq = parseFloat(e.target.value);
+    document.getElementById('freq-v').textContent = freq.toFixed(1);
+    if (osc) osc.frequency.value = 120 + freq * 85;
+  });
+
+  document.getElementById('wave-play').addEventListener('click', e => {
+    const a = ac();
+    if (playing) {
+      if (osc) { osc.stop(); osc = null; gain = null; }
+      playing = false;
+      e.target.textContent = '🔊 Play tone';
+    } else {
+      osc = a.createOscillator();
+      gain = a.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 120 + freq * 85;
+      gain.gain.value = (amp / 100) * 0.2;
+      osc.connect(gain); gain.connect(a.destination);
+      osc.start();
+      playing = true;
+      e.target.textContent = '🔇 Stop tone';
+    }
+  });
+
+  function draw() {
+    t += 0.045;
+    const w = c.width, h = c.height, cy = h / 2;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#030408'; ctx.fillRect(0, 0, w, h);
+
+    // axis
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+
+    // amplitude guide lines
+    const A = (amp / 100) * h * 0.36;
+    ctx.strokeStyle = 'rgba(251,191,36,0.12)';
+    ctx.setLineDash([6 * devicePixelRatio, 6 * devicePixelRatio]);
+    ctx.beginPath(); ctx.moveTo(0, cy - A); ctx.lineTo(w, cy - A); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, cy + A); ctx.lineTo(w, cy + A); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // waveform — multicolor gradient
+    const wg = ctx.createLinearGradient(0, 0, w, 0);
+    wg.addColorStop(0, '#6c8fff');
+    wg.addColorStop(0.5, '#fbbf24');
+    wg.addColorStop(1, '#f87171');
+    ctx.strokeStyle = wg;
+    ctx.lineWidth = 3 * devicePixelRatio;
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur = 8 * devicePixelRatio;
+    ctx.beginPath();
+    for (let x = 0; x < w; x += 2) {
+      const y = cy + Math.sin((x / w) * Math.PI * 2 * freq * 4 - t * 3) * A;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // labels
+    ctx.fillStyle = 'rgba(251,191,36,0.6)';
+    ctx.font = `${10 * devicePixelRatio}px 'JetBrains Mono', monospace`;
+    ctx.fillText(`amplitude = ${amp}`, 10 * devicePixelRatio, cy - A - 8 * devicePixelRatio);
+    ctx.fillText(`freq = ${freq.toFixed(1)} Hz`, 10 * devicePixelRatio, 20 * devicePixelRatio);
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ============================================================
+   SIM 4 — Echo (NO reflection if wall < 17 m)
+   ============================================================ */
+(function(){
+  const { c, ctx } = mkCanvas('c-echo');
+  let wallDist = 30, t = 0;
+  let pulses = [];
+  const statusEl = document.getElementById('echo-status');
+  const SOUND_SPEED = 340; // m/s
+
+  document.getElementById('echo-dist').addEventListener('input', e => {
+    wallDist = parseFloat(e.target.value);
+    document.getElementById('echo-dist-v').textContent = wallDist + ' m';
+  });
+
+  document.getElementById('echo-shout').addEventListener('click', () => {
+    // play a short burst
+    try {
+      const a = ac();
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.frequency.value = 600;
+      o.type = 'sawtooth';
+      g.gain.setValueAtTime(0.15, a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.15);
+      o.connect(g); g.connect(a.destination);
+      o.start(); o.stop(a.currentTime + 0.15);
+
+      // schedule echo only if >= 17 m
+      if (wallDist >= 17) {
+        const delay = (wallDist * 2) / SOUND_SPEED;
+        setTimeout(() => {
+          try {
+            const a2 = ac();
+            const o2 = a2.createOscillator();
+            const g2 = a2.createGain();
+            o2.frequency.value = 580;
+            o2.type = 'sine';
+            g2.gain.setValueAtTime(0.08, a2.currentTime);
+            g2.gain.exponentialRampToValueAtTime(0.001, a2.currentTime + 0.12);
+            o2.connect(g2); g2.connect(a2.destination);
+            o2.start(); o2.stop(a2.currentTime + 0.12);
+          } catch(e) {}
+        }, delay * 1000);
+      }
+    } catch(e) {}
+
+    const canEcho = wallDist >= 17;
+    pulses.push({
+      dist: 0,
+      bounced: false,
+      canEcho,
+      born: t,
+      absorbed: false
+    });
+
+    if (canEcho) {
+      const delay = (wallDist * 2 / SOUND_SPEED).toFixed(2);
+      statusEl.textContent = `Echo expected — wall is ${wallDist} m away. Echo arrives in ~${delay} s.`;
+    } else {
+      statusEl.textContent = `Too close (${wallDist} m < 17 m) — sound hits wall and is absorbed. No distinct echo.`;
+    }
+  });
+
+  function draw() {
+    t += 1/60;
+    const w = c.width, h = c.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#030408'; ctx.fillRect(0, 0, w, h);
+
+    // ground
+    const groundY = h * 0.72;
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(0, groundY, w, h - groundY);
+
+    const srcX = w * 0.1;
+    const maxDist = 60;
+    const wallX = srcX + (wallDist / maxDist) * (w * 0.82);
+
+    // wall
+    const wallH = h * 0.5;
+    const wallTop = groundY - wallH;
+    ctx.fillStyle = 'rgba(100,120,160,0.25)';
+    ctx.fillRect(wallX - 6 * devicePixelRatio, wallTop, 12 * devicePixelRatio, wallH);
+    ctx.strokeStyle = 'rgba(150,170,210,0.5)';
+    ctx.lineWidth = 2 * devicePixelRatio;
+    ctx.beginPath();
+    ctx.moveTo(wallX, wallTop);
+    ctx.lineTo(wallX, groundY);
+    ctx.stroke();
+    // brick pattern
+    for (let wy = wallTop; wy < groundY; wy += h * 0.06) {
+      ctx.strokeStyle = 'rgba(100,120,160,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(wallX - 6 * devicePixelRatio, wy); ctx.lineTo(wallX + 6 * devicePixelRatio, wy); ctx.stroke();
+    }
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = `${10 * devicePixelRatio}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${wallDist} m`, wallX, groundY + 22 * devicePixelRatio);
+    ctx.textAlign = 'left';
+
+    // person (source)
+    const py = groundY;
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath(); ctx.arc(srcX, py - 18 * devicePixelRatio, 7 * devicePixelRatio, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3 * devicePixelRatio;
+    ctx.beginPath();
+    ctx.moveTo(srcX, py - 11 * devicePixelRatio);
+    ctx.lineTo(srcX, py);
+    ctx.moveTo(srcX - 8 * devicePixelRatio, py - 6 * devicePixelRatio);
+    ctx.lineTo(srcX + 8 * devicePixelRatio, py - 6 * devicePixelRatio);
+    ctx.moveTo(srcX, py);
+    ctx.lineTo(srcX - 6 * devicePixelRatio, py + 12 * devicePixelRatio);
+    ctx.moveTo(srcX, py);
+    ctx.lineTo(srcX + 6 * devicePixelRatio, py + 12 * devicePixelRatio);
+    ctx.stroke();
+
+    // distance scale
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = `${9 * devicePixelRatio}px 'JetBrains Mono', monospace`;
+    ctx.fillText('17 m threshold', srcX + (17 / maxDist) * (w * 0.82) - 20 * devicePixelRatio, groundY - wallH - 10 * devicePixelRatio);
+    ctx.strokeStyle = 'rgba(251,191,36,0.3)';
+    ctx.setLineDash([4 * devicePixelRatio, 4 * devicePixelRatio]);
+    const threshX = srcX + (17 / maxDist) * (w * 0.82);
+    ctx.beginPath(); ctx.moveTo(threshX, wallTop - 20 * devicePixelRatio); ctx.lineTo(threshX, groundY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // pulse speed (pixels per second, proportional)
+    const pxPerM = (wallX - srcX) / wallDist;
+    const pxPerSec = SOUND_SPEED * pxPerM * 0.12; // scaled for visualization
+
+    for (const p of pulses) {
+      p.dist += pxPerSec * (1 / 60);
+
+      if (!p.bounced) {
+        const px = srcX + p.dist;
+        if (px >= wallX) {
+          if (p.canEcho) {
+            p.bounced = true;
+            p.dist = 0;
+          } else {
+            // absorbed — wall < 17m, no echo
+            p.absorbed = true;
+          }
+        }
+
+        if (!p.absorbed) {
+          // draw going pulse
+          for (let ring = 0; ring < 3; ring++) {
+            const rr = p.dist - ring * 18 * devicePixelRatio;
+            if (rr < 0) continue;
+            const alpha = Math.max(0, 0.7 - ring * 0.2 - p.dist / (w * 0.8));
+            ctx.strokeStyle = `rgba(251,191,36,${alpha})`;
+            ctx.lineWidth = (2 - ring * 0.5) * devicePixelRatio;
+            ctx.beginPath();
+            ctx.arc(srcX, groundY - wallH * 0.4, rr, -1.4, 1.4);
+            ctx.stroke();
+          }
+        } else {
+          // absorbed pulse: show at wall, fading fast
+          const px2 = Math.min(srcX + p.dist, wallX);
+          const alpha = Math.max(0, 0.4 - (p.dist - (wallX - srcX)) / (50 * devicePixelRatio));
+          if (alpha > 0) {
+            ctx.strokeStyle = `rgba(150,150,150,${alpha})`;
+            ctx.lineWidth = 1.5 * devicePixelRatio;
+            ctx.beginPath(); ctx.arc(wallX, groundY - wallH * 0.4, 15 * devicePixelRatio, -Math.PI/2, Math.PI/2); ctx.stroke();
+          }
+        }
+      } else {
+        // bounced echo traveling back
+        const ex = wallX - p.dist;
+        for (let ring = 0; ring < 3; ring++) {
+          const rr = p.dist - ring * 18 * devicePixelRatio;
+          if (rr < 0) continue;
+          const alpha = Math.max(0, 0.5 - ring * 0.15 - p.dist / (wallX - srcX));
+          ctx.strokeStyle = `rgba(45,212,191,${alpha})`;
+          ctx.lineWidth = (1.8 - ring * 0.4) * devicePixelRatio;
+          ctx.beginPath();
+          ctx.arc(wallX, groundY - wallH * 0.4, rr, Math.PI - 1.4, Math.PI + 1.4);
+          ctx.stroke();
+        }
+        if (ex < srcX) p.absorbed = true;
+      }
+    }
+
+    pulses = pulses.filter(p => !p.absorbed || (p.bounced && wallX - p.dist > srcX - 20));
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ============================================================
+   SIM 5 — Human Ear
+   ============================================================ */
+(function(){
+  const { c, ctx } = mkCanvas('c-ear');
+  let progress = -1;
+  const statusEl = document.getElementById('ear-status');
+  const STAGES = [
+    'Outer ear (pinna) funnels sound into the ear canal',
+    'Sound hits the eardrum — it vibrates at the wave\'s frequency',
+    'Three ossicles (malleus → incus → stapes) amplify the vibration ×20',
+    'Stapes pushes on the oval window of the cochlea',
+    'Cochlea converts vibration into electrical nerve signals',
+    'Auditory nerve fires signals to the brain — you hear sound! 🧠'
+  ];
+
+  document.getElementById('ear-send').addEventListener('click', () => {
+    progress = 0;
+    statusEl.textContent = STAGES[0];
+  });
+
+  let t = 0;
+  function draw() {
+    t += 1 / 60;
+    if (progress >= 0) progress += 0.007;
+    const w = c.width, h = c.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#030408'; ctx.fillRect(0, 0, w, h);
+
+    const cx = w * 0.5, cy = h * 0.5;
+    const scale = Math.min(w, h);
+
+    // ── Outer ear (pinna) ──
+    ctx.strokeStyle = 'rgba(230,200,170,0.7)';
+    ctx.lineWidth = 4 * devicePixelRatio;
+    ctx.beginPath();
+    ctx.ellipse(w * 0.1, cy, scale * 0.06, scale * 0.16, 0.2, 0.3, Math.PI * 1.8);
+    ctx.stroke();
+    ctx.font = `${9 * devicePixelRatio}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'center';
+    ctx.fillText('pinna', w * 0.1, cy + scale * 0.22);
+
+    // ── Canal ──
+    ctx.strokeStyle = 'rgba(230,200,170,0.4)';
+    ctx.lineWidth = 10 * devicePixelRatio;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(w * 0.14, cy);
+    ctx.lineTo(w * 0.34, cy);
+    ctx.stroke();
+    ctx.fillText('ear canal', w * 0.24, cy + scale * 0.13);
+
+    // ── Eardrum ──
+    ctx.strokeStyle = progress >= 0 && progress < 0.25 ? '#fbbf24' : 'rgba(251,191,36,0.7)';
+    ctx.lineWidth = 4 * devicePixelRatio;
+    const edX = w * 0.34;
+    const edWob = progress >= 0 && progress < 0.25 ? Math.sin(t * 40) * 3 * devicePixelRatio : 0;
+    ctx.beginPath();
+    ctx.moveTo(edX + edWob, cy - scale * 0.1);
+    ctx.quadraticCurveTo(edX + edWob * 2, cy, edX + edWob, cy + scale * 0.1);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(251,191,36,0.6)';
+    ctx.fillText('eardrum', edX, cy - scale * 0.13);
+
+    // ── Ossicles (zig-zag) ──
+    const ossColor = progress >= 0.2 && progress < 0.5 ? '#a78bfa' : 'rgba(167,139,250,0.6)';
+    ctx.strokeStyle = ossColor;
+    ctx.lineWidth = 4 * devicePixelRatio;
+    ctx.lineCap = 'round';
+    const pts = [
+      [w * 0.36, cy],
+      [w * 0.43, cy - scale * 0.09],
+      [w * 0.49, cy + scale * 0.07],
+      [w * 0.55, cy - scale * 0.05],
     ];
-
-    // draw pinna
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-    ctx.lineWidth = 3*devicePixelRatio;
     ctx.beginPath();
-    ctx.ellipse(w*0.08, cy, w*0.05, h*0.22, 0, 0.3, Math.PI*1.7);
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
     ctx.stroke();
-
-    // canal
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    ctx.lineTo(points[2].x, points[2].y);
-    ctx.stroke();
-
-    // eardrum
-    ctx.strokeStyle = 'rgba(255,180,84,0.8)';
-    ctx.lineWidth = 3*devicePixelRatio;
-    ctx.beginPath();
-    ctx.moveTo(points[2].x, cy-h*0.12);
-    ctx.lineTo(points[2].x, cy+h*0.12);
-    ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,0.4)';
-    ctx.font = `${10*devicePixelRatio}px 'JetBrains Mono', monospace`;
-    ctx.fillText('eardrum', points[2].x-20*devicePixelRatio, cy-h*0.16);
-
-    // ossicles (zig-zag bones)
-    ctx.strokeStyle = 'rgba(139,157,255,0.8)';
-    ctx.lineWidth = 3*devicePixelRatio;
-    ctx.beginPath();
-    ctx.moveTo(points[2].x, cy);
-    ctx.lineTo(points[3].x, points[3].y);
-    ctx.lineTo(points[4].x, points[4].y);
-    ctx.lineTo(points[5].x, cy);
-    ctx.stroke();
-    ctx.fillText('ossicles', (points[3].x+points[4].x)/2-20*devicePixelRatio, cy-h*0.22);
-
-    // cochlea spiral
-    const cxx = points[5].x, cyy = cy;
-    ctx.strokeStyle = 'rgba(94,234,212,0.85)';
-    ctx.beginPath();
-    for(let a=0; a<Math.PI*5; a+=0.1){
-      const rr = (h*0.09) * (a/(Math.PI*5));
-      const x = cxx + Math.cos(a)*rr;
-      const y = cyy + Math.sin(a)*rr;
-      if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    // circles at joints
+    for (const pt of pts) {
+      ctx.fillStyle = ossColor;
+      ctx.beginPath(); ctx.arc(pt[0], pt[1], 4 * devicePixelRatio, 0, Math.PI * 2); ctx.fill();
     }
+    ctx.fillStyle = 'rgba(167,139,250,0.6)';
+    ctx.fillText('ossicles (×20)', w * 0.42, cy + scale * 0.14);
+
+    // ── Cochlea (spiral) ──
+    const ccX = w * 0.72, ccY = cy;
+    const cochColor = progress >= 0.5 && progress < 0.82 ? '#2dd4bf' : 'rgba(45,212,191,0.6)';
+    ctx.strokeStyle = cochColor;
+    ctx.lineWidth = 3 * devicePixelRatio;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let a = 0; a < Math.PI * 5.5; a += 0.08) {
+      const rr = scale * 0.075 * (1 - a / (Math.PI * 6));
+      const px = ccX + Math.cos(a - Math.PI * 0.5) * rr;
+      const py = ccY + Math.sin(a - Math.PI * 0.5) * rr;
+      a < 0.08 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    // connect to oval window
+    ctx.lineTo(w * 0.57, cy);
     ctx.stroke();
-    ctx.fillText('cochlea', cxx-16*devicePixelRatio, cyy+h*0.15);
+    ctx.fillStyle = 'rgba(45,212,191,0.6)';
+    ctx.fillText('cochlea', ccX - 10 * devicePixelRatio, cy + scale * 0.14);
 
-    // brain label
-    ctx.fillStyle='rgba(255,255,255,0.4)';
-    ctx.fillText('→ brain', w*0.9, cyy);
+    // ── Auditory nerve ──
+    const nerveColor = progress >= 0.82 ? '#f87171' : 'rgba(248,113,113,0.35)';
+    ctx.strokeStyle = nerveColor;
+    ctx.lineWidth = 3 * devicePixelRatio;
+    ctx.setLineDash([5 * devicePixelRatio, 4 * devicePixelRatio]);
+    ctx.beginPath();
+    ctx.moveTo(ccX + 8 * devicePixelRatio, ccY);
+    ctx.bezierCurveTo(w * 0.82, cy - scale * 0.05, w * 0.88, cy + scale * 0.08, w * 0.93, cy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = nerveColor;
+    ctx.fillText('nerve → brain', w * 0.82, cy - scale * 0.12);
 
-    // traveling pulse
-    if(progress >= 0){
-      progress += 0.012;
-      const segLen = 4;
-      const segIdx = Math.min(Math.floor(progress*segLen), segLen-1);
-      const localT = (progress*segLen) - segIdx;
-      const segPoints = [points[0], points[2], points[3], points[4], points[5]];
-      const p0 = segPoints[Math.min(segIdx, segPoints.length-2)];
-      const p1 = segPoints[Math.min(segIdx+1, segPoints.length-1)];
-      const px = p0.x + (p1.x-p0.x)*localT;
-      const py = p0.y + (p1.y-p0.y)*localT;
-      ctx.fillStyle = '#5eead4';
-      ctx.beginPath(); ctx.arc(px,py,7*devicePixelRatio,0,Math.PI*2); ctx.fill();
-
-      const stageIdx = Math.min(Math.floor(progress*stages.length), stages.length-1);
-      status.textContent = stages[stageIdx];
-
-      if(progress >= 1){ progress = -1; status.textContent = 'Reached the brain — sound perceived!'; }
+    // ── Brain icon ──
+    if (progress >= 0.85) {
+      const bAlpha = Math.min(1, (progress - 0.85) * 10);
+      const bg = ctx.createRadialGradient(w * 0.93, cy, 0, w * 0.93, cy, scale * 0.07);
+      bg.addColorStop(0, `rgba(248,113,113,${bAlpha * 0.6})`);
+      bg.addColorStop(1, 'transparent');
+      ctx.fillStyle = bg;
+      ctx.beginPath(); ctx.arc(w * 0.93, cy, scale * 0.07, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `rgba(255,255,255,${bAlpha})`;
+      ctx.font = `${scale * 0.055}px serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('🧠', w * 0.93, cy + scale * 0.02);
     }
 
+    // ── Traveling pulse ──
+    if (progress >= 0 && progress < 1) {
+      const waypoints = [
+        [w * 0.14, cy],
+        [w * 0.34, cy],
+        [pts[0][0], pts[0][1]],
+        [pts[3][0], pts[3][1]],
+        [w * 0.57, cy],
+        [ccX, ccY],
+        [w * 0.93, cy],
+      ];
+      const seg = Math.min(Math.floor(progress * (waypoints.length - 1)), waypoints.length - 2);
+      const local = (progress * (waypoints.length - 1)) - seg;
+      const p0 = waypoints[seg], p1 = waypoints[seg + 1];
+      const px = p0[0] + (p1[0] - p0[0]) * local;
+      const py = p0[1] + (p1[1] - p0[1]) * local;
+
+      const pg = ctx.createRadialGradient(px, py, 0, px, py, 10 * devicePixelRatio);
+      pg.addColorStop(0, 'rgba(255,255,200,1)');
+      pg.addColorStop(1, 'transparent');
+      ctx.fillStyle = pg;
+      ctx.beginPath(); ctx.arc(px, py, 10 * devicePixelRatio, 0, Math.PI * 2); ctx.fill();
+
+      const stageIdx = Math.min(Math.floor(progress * STAGES.length), STAGES.length - 1);
+      statusEl.textContent = STAGES[stageIdx];
+    }
+
+    if (progress >= 1) {
+      progress = -1;
+      statusEl.textContent = '✅ Sound fully perceived. Click to trace again.';
+    }
+
+    ctx.textAlign = 'left';
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
