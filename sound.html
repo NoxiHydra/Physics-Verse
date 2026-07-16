@@ -3,175 +3,167 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sound · Physics Lab</title>
+<title>Sound · PhysicsVerse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <style>
-  .topic-hero {
-    padding: 64px 0 40px;
-    border-bottom: 1px solid var(--line);
-    background: radial-gradient(ellipse at 20% 0%, var(--sound-glow), transparent 55%);
-  }
-  .topic-hero .eyebrow { color: var(--sound); }
-  .topic-hero h1 {
-    font-size: clamp(2rem, 4.4vw, 3rem);
-    margin: 12px 0 14px;
-  }
-  .topic-hero p {
-    max-width: 620px;
-    color: var(--text-muted);
-    font-size: 1.02rem;
-  }
-  .section-head span.eyebrow { color: var(--sound); }
-  .demo .stage { cursor: pointer; }
+.topic-hero { background: radial-gradient(ellipse at 0% 0%, rgba(251,191,36,0.1), transparent 55%); }
+.topic-hero .eyebrow { color: var(--gold); }
+.sim-panel .eyebrow { color: var(--gold); }
+.btn-primary { background: linear-gradient(135deg, var(--gold), #f97316); color: #000; }
+.btn-primary:hover { color: #000; }
+input[type="range"]::-webkit-slider-thumb { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
 </style>
 </head>
 <body>
 
-<header class="topnav">
-  <div class="brand"><span class="dot"></span> Physics&nbsp;Lab</div>
-  <nav>
+<header class="nav">
+  <span class="nav-brand">PhysicsVerse</span>
+  <nav class="nav-links">
     <a href="index.html">Home</a>
     <a href="gravitation.html">Gravitation</a>
     <a href="sound.html" class="active">Sound</a>
   </nav>
 </header>
 
-<section class="topic-hero">
-  <div class="wrap">
-    <span class="eyebrow">Topic 02</span>
-    <h1>Sound</h1>
-    <p>Sound is vibration — a to-and-fro motion pushing on the air around it, one particle nudging the next, until it reaches your ear. No medium, no sound. Tap through the simulations below.</p>
+<div class="topic-hero">
+  <p class="eyebrow">Topic 02 · Sound</p>
+  <h1>Vibration made visible.</h1>
+  <p>Sound is nothing but matter oscillating. Strike something — it pushes air molecules, which push the next ones, which eventually push your eardrum. No matter, no sound. Interact with each demo below.</p>
+</div>
+
+<!-- ══ SIM 1: Vibrating tuning fork ══ -->
+<section class="sim-section">
+  <span class="sim-label">01 — Source of Sound</span>
+  <div class="sim-split">
+    <div class="sim-stage" id="stage-vib">
+      <canvas id="c-vib"></canvas>
+      <div class="stage-hint">click anywhere to strike</div>
+    </div>
+    <div class="sim-panel">
+      <p class="eyebrow">Vibration → Sound</p>
+      <h2>Vibrating Objects Produce Sound</h2>
+      <p class="desc">Every sound begins with something moving back and forth. A tuning fork's prongs vibrate hundreds of times per second, pushing and pulling the air around them into a wave.<br><br>Strike it and watch the wave fronts spread outward. The wave dies away as the fork loses energy.</p>
+      <div class="controls">
+        <button class="btn btn-primary" id="vib-strike">Strike the fork</button>
+        <div class="readout" id="vib-readout"><span id="vib-status">Waiting for a strike…</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- 1. Vibrating objects -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">01 — Source of sound</span>
-      <h2>Vibrating objects produce sound</h2>
-      <p>Every sound starts with something moving back and forth, fast. Pluck the tuning fork or the drum skin and watch it vibrate.</p>
+<!-- ══ SIM 2: Particle propagation ══ -->
+<section class="sim-section">
+  <span class="sim-label">02 — Propagation</span>
+  <div class="sim-split">
+    <div class="sim-stage">
+      <canvas id="c-prop"></canvas>
+      <div class="stage-hint">watch the highlighted particle</div>
     </div>
-    <div class="demo">
-      <div class="stage" id="c-vibrate-stage"><canvas id="c-vibrate"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Click the stage to strike the tuning fork. Notice the ripples spreading outward as it vibrates — that's the sound wave being born.</p>
-        <div class="controls">
-          <button class="btn primary" id="vibrate-strike">Strike it</button>
+    <div class="sim-panel">
+      <p class="eyebrow">Compression Waves</p>
+      <h2>Sound Through Particles</h2>
+      <p class="desc">Sound is a <em>longitudinal wave</em> — particles oscillate in the same direction as the wave travels. They don't travel themselves; they just nudge their neighbours.<br><br>The glowing teal particle stays roughly in place. The compression pattern races across the box.</p>
+      <div class="controls">
+        <div>
+          <span class="ctrl-label">Source frequency</span>
+          <div class="ctrl-row">
+            <input type="range" id="prop-freq" min=".5" max="4" step=".1" value="1.5">
+            <span class="ctrl-val" id="prop-freq-v">1.5</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="prop-pause">⏸ Pause</button>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- 2. Sound through particles -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">02 — Propagation</span>
-      <h2>Sound traveling through particles</h2>
-      <p>Sound moves as a compression wave — particles bunch up (compression) then spread out (rarefaction), passing the disturbance along without any particle actually traveling far.</p>
+<!-- ══ SIM 3: Amplitude / Frequency ══ -->
+<section class="sim-section">
+  <span class="sim-label">03 — Pitch &amp; Loudness</span>
+  <div class="sim-split">
+    <div class="sim-stage">
+      <canvas id="c-wave"></canvas>
+      <div class="stage-hint">adjust sliders to change the wave</div>
     </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-particles"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Watch one highlighted particle — it only jiggles in place, even as the wave pattern races across the box.</p>
-        <div class="controls">
-          <div class="row">
-            <button class="btn" id="particles-toggle">Pause</button>
+    <div class="sim-panel">
+      <p class="eyebrow">Amplitude = Loudness · Frequency = Pitch</p>
+      <h2>Amplitude and Frequency</h2>
+      <p class="desc"><strong>Amplitude</strong> is the size of each oscillation — a bigger amplitude means louder sound. <strong>Frequency</strong> is how many oscillations per second — higher frequency means a higher pitch.<br><br>Move both sliders. Enable the tone to hear the changes live.</p>
+      <div class="controls">
+        <div>
+          <span class="ctrl-label">Amplitude (loudness)</span>
+          <div class="ctrl-row">
+            <input type="range" id="amp" min="5" max="100" value="50">
+            <span class="ctrl-val" id="amp-v">50</span>
           </div>
+        </div>
+        <div>
+          <span class="ctrl-label">Frequency (pitch)</span>
+          <div class="ctrl-row">
+            <input type="range" id="freq" min="1" max="10" step=".1" value="3">
+            <span class="ctrl-val" id="freq-v">3.0</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="wave-play">🔊 Play tone</button>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- 3. Amplitude and frequency -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">03 — Loudness and pitch</span>
-      <h2>Amplitude and frequency</h2>
-      <p>Amplitude is how big the vibration is — it controls loudness. Frequency is how fast it repeats — it controls pitch.</p>
+<!-- ══ SIM 4: Echo ══ -->
+<section class="sim-section">
+  <span class="sim-label">04 — Reflection</span>
+  <div class="sim-split">
+    <div class="sim-stage">
+      <canvas id="c-echo"></canvas>
+      <div class="stage-hint">move the wall · shout</div>
     </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-wave"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Drag both sliders and watch — and if your device has sound on, listen to the pitch and volume change live.</p>
-        <div class="controls">
-          <div>
-            <label>Amplitude (loudness)</label>
-            <div class="row"><input type="range" id="amp" min="10" max="100" step="1" value="50"><span class="val" id="amp-val">50</span></div>
-          </div>
-          <div>
-            <label>Frequency (pitch)</label>
-            <div class="row"><input type="range" id="freq" min="1" max="10" step="0.1" value="3"><span class="val" id="freq-val">3.0</span></div>
-          </div>
-          <div class="row">
-            <button class="btn" id="wave-sound">🔊 Play tone</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 4. Echo -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">04 — Reflection</span>
+    <div class="sim-panel">
+      <p class="eyebrow">Echo requires ≥ 17 m</p>
       <h2>Echoes</h2>
-      <p>An echo is just sound bouncing off a distant, hard surface and arriving back late enough for your ear to hear it as a separate sound — the surface needs to be at least ~17 m away.</p>
-    </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-echo"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Set the wall distance and shout. Move the wall closer than 17 m and the echo merges into the original sound instead of arriving as a separate one.</p>
-        <div class="controls">
-          <div>
-            <label>Wall distance</label>
-            <div class="row"><input type="range" id="echo-dist" min="5" max="60" step="1" value="30"><span class="val" id="echo-dist-val">30 m</span></div>
+      <p class="desc">An echo is a reflected sound that arrives at least 0.1 s after the original — your ear can then perceive it separately. For that, the reflecting surface must be at least <strong>17 metres</strong> away (sound travels 340 m/s × 0.1 s ÷ 2).<br><br>Closer than 17 m → the reflected wave merges back and you hear only a slight "thickening" of the original sound, not a distinct echo.</p>
+      <div class="controls">
+        <div>
+          <span class="ctrl-label">Wall distance</span>
+          <div class="ctrl-row">
+            <input type="range" id="echo-dist" min="3" max="60" value="30">
+            <span class="ctrl-val" id="echo-dist-v">30 m</span>
           </div>
-          <div class="row">
-            <button class="btn primary" id="echo-shout">Shout!</button>
-          </div>
-          <div class="readout" id="echo-readout"><span id="echo-status">Ready.</span></div>
         </div>
+        <button class="btn btn-primary" id="echo-shout">📣 Shout!</button>
+        <div class="readout"><span id="echo-status">Ready.</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- 5. Human ear -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">05 — Hearing</span>
-      <h2>How the human ear receives sound</h2>
-      <p>Sound funnels down the ear canal, vibrates the eardrum, gets amplified by three tiny bones, and turns into nerve signals in the cochlea.</p>
+<!-- ══ SIM 5: Human ear ══ -->
+<section class="sim-section">
+  <span class="sim-label">05 — Hearing</span>
+  <div class="sim-split">
+    <div class="sim-stage">
+      <canvas id="c-ear"></canvas>
+      <div class="stage-hint">click "send a sound" to trace the path</div>
     </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-ear"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Send a sound wave in and follow it stage by stage: outer ear → eardrum → ossicles → cochlea → brain.</p>
-        <div class="controls">
-          <button class="btn primary" id="ear-send">Send a sound in</button>
-          <div class="readout" id="ear-readout"><span id="ear-status">Waiting…</span></div>
-        </div>
+    <div class="sim-panel">
+      <p class="eyebrow">Outer → Middle → Inner → Brain</p>
+      <h2>How the Human Ear Hears</h2>
+      <p class="desc">Sound funnels through the <strong>pinna</strong> → bounces off the <strong>eardrum</strong> → three tiny bones (<strong>ossicles</strong>) amplify it → the <strong>cochlea</strong> converts vibration to electrical signals → the <strong>auditory nerve</strong> carries them to the brain.<br><br>Send a sound in and trace the full journey.</p>
+      <div class="controls">
+        <button class="btn btn-primary" id="ear-send">Send a sound in</button>
+        <div class="readout"><span id="ear-status">Waiting…</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<footer>Physics Lab · Sound — vibrate, travel, reflect, and listen your way through the concepts</footer>
+<footer>PhysicsVerse · Sound — vibrate, travel, bounce, and listen</footer>
 
 <script src="sound.js"></script>
 </body>
