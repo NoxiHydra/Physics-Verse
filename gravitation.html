@@ -3,78 +3,176 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gravitation · Physics Lab</title>
+<title>Gravitation · PhysicsVerse</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <style>
-  .topic-hero {
-    padding: 64px 0 40px;
-    border-bottom: 1px solid var(--line);
-    background: radial-gradient(ellipse at 20% 0%, var(--gravity-glow), transparent 55%);
-  }
-  .topic-hero .eyebrow { color: var(--gravity); }
-  .topic-hero h1 {
-    font-size: clamp(2rem, 4.4vw, 3rem);
-    margin: 12px 0 14px;
-  }
-  .topic-hero p {
-    max-width: 620px;
-    color: var(--text-muted);
-    font-size: 1.02rem;
-  }
-  .section-head span.eyebrow { color: var(--gravity); }
-  .demo .stage { cursor: grab; }
-  .demo .stage.grabbing { cursor: grabbing; }
-  .bonus-section {
-    background: linear-gradient(180deg, rgba(139,157,255,0.04), transparent);
-  }
-  .bonus-tag { background: var(--gravity); }
+.topic-hero .eyebrow { color: var(--aurora1); }
+.sim-panel .eyebrow { color: var(--aurora1); }
+.btn-primary { background: linear-gradient(135deg, var(--aurora1), var(--aurora2)); }
 </style>
 </head>
 <body>
 
-<header class="topnav">
-  <div class="brand"><span class="dot"></span> Physics&nbsp;Lab</div>
-  <nav>
+<header class="nav">
+  <span class="nav-brand">PhysicsVerse</span>
+  <nav class="nav-links">
     <a href="index.html">Home</a>
     <a href="gravitation.html" class="active">Gravitation</a>
     <a href="sound.html">Sound</a>
   </nav>
 </header>
 
-<section class="topic-hero">
-  <div class="wrap">
-    <span class="eyebrow">Topic 01</span>
-    <h1>Gravitation</h1>
-    <p>Every mass pulls on every other mass. That single idea holds you to the floor, keeps the Moon circling Earth, and keeps Earth circling the Sun. Play with each simulation below — drag things, drop things, change the sliders.</p>
+<div class="topic-hero">
+  <p class="eyebrow">Topic 01 · Gravitation</p>
+  <h1>The force between all masses.</h1>
+  <p>Every object with mass attracts every other. This single idea governs falling apples, orbiting moons, and the structure of galaxies. Interact with each simulation — drag, drop, adjust.</p>
+</div>
+
+<!-- ══ SIM 1: Solar System Orbits ══ -->
+<section class="sim-section">
+  <span class="sim-label">01 — Planetary Orbits</span>
+  <div class="sim-split">
+    <div class="sim-stage" id="stage-orbit">
+      <canvas id="c-orbit"></canvas>
+      <div class="stage-hint">drag planets · scroll to zoom</div>
+    </div>
+    <div class="sim-panel">
+      <p class="eyebrow">Kepler's Law in action</p>
+      <h2>Planets Orbiting the Sun</h2>
+      <p class="desc">A planet doesn't fly off because it's always falling toward the Sun — but moving sideways so fast that it keeps missing. Closer planets orbit faster because gravity is stronger there. <br><br>Drag any planet to a new orbit. Notice how its speed changes automatically.</p>
+      <div class="controls">
+        <div>
+          <span class="ctrl-label">Simulation speed</span>
+          <div class="ctrl-row">
+            <input type="range" id="orbit-spd" min="0" max="4" step="0.1" value="1">
+            <span class="ctrl-val" id="orbit-spd-v">1.0×</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="orbit-pause">⏸ Pause</button>
+          <button class="btn" id="orbit-trails">Trails: ON</button>
+        </div>
+        <div class="readout" id="orbit-readout">
+          <span>Drag a planet to change its orbit</span>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- 1. Orbiting planets -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">01 — Orbits</span>
-      <h2>Planets orbiting the Sun</h2>
-      <p>A planet keeps falling toward the Sun but keeps missing it — that endless "falling and missing" is an orbit.</p>
+<!-- ══ SIM 2: Free Fall ══ -->
+<section class="sim-section">
+  <span class="sim-label">02 — Free Fall</span>
+  <div class="sim-split">
+    <div class="sim-stage" id="stage-fall">
+      <canvas id="c-fall"></canvas>
+      <div class="stage-hint">click "drop" to release all objects</div>
     </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-orbit"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Speed up time to see the inner planets lap the outer ones. Notice how a planet closer to the Sun moves faster — gravity is stronger there.</p>
-        <div class="controls">
-          <div>
-            <label>Simulation speed</label>
-            <div class="row">
-              <input type="range" id="orbit-speed" min="0" max="3" step="0.05" value="1">
-              <span class="val" id="orbit-speed-val">1.0×</span>
-            </div>
+    <div class="sim-panel">
+      <p class="eyebrow">g = 9.8 m/s²</p>
+      <h2>Objects Falling to Earth</h2>
+      <p class="desc">In a vacuum, a feather and a hammer fall identically — gravity accelerates all objects at 9.8 m/s² regardless of mass. Air resistance is the difference in real life.<br><br>Toggle air resistance and watch what changes. The stone barely notices — the feather does.</p>
+      <div class="controls">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="fall-drop">Drop objects</button>
+          <button class="btn" id="fall-air">Air: ON</button>
+        </div>
+        <div class="readout" id="fall-readout">
+          <span>time: <b id="fall-t">0.00 s</b></span>
+          <span>g: <b>9.8 m/s²</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SIM 3: Two Masses ══ -->
+<section class="sim-section">
+  <span class="sim-label">03 — Newton's Law</span>
+  <div class="sim-split">
+    <div class="sim-stage" id="stage-masses">
+      <canvas id="c-masses"></canvas>
+      <div class="stage-hint">drag either mass</div>
+    </div>
+    <div class="sim-panel">
+      <p class="eyebrow">F = Gm₁m₂/r²</p>
+      <h2>Gravitational Attraction</h2>
+      <p class="desc">Every two masses pull each other. The force grows with the masses and shrinks with the square of the distance. Double the distance → force drops to ¼.<br><br>Drag either glowing sphere. The beam between them shows the force — brighter means stronger.</p>
+      <div class="controls">
+        <div>
+          <span class="ctrl-label">Mass A</span>
+          <div class="ctrl-row">
+            <input type="range" id="mA" min="1" max="12" step=".5" value="5">
+            <span class="ctrl-val" id="mA-v">5</span>
           </div>
-          <div class="row">
-            <button class="btn" id="orbit-pause">Pause</button>
-            <button class="btn" id="orbit-trails">Toggle trails</button>
+        </div>
+        <div>
+          <span class="ctrl-label">Mass B</span>
+          <div class="ctrl-row">
+            <input type="range" id="mB" min="1" max="12" step=".5" value="7">
+            <span class="ctrl-val" id="mB-v">7</span>
+          </div>
+        </div>
+        <div class="readout" id="masses-readout">
+          <span>force: <b id="m-force">—</b></span>
+          <span>r: <b id="m-dist">—</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SIM 4: Satellite ══ -->
+<section class="sim-section">
+  <span class="sim-label">04 — Orbital Velocity</span>
+  <div class="sim-split">
+    <div class="sim-stage" id="stage-sat">
+      <canvas id="c-sat"></canvas>
+      <div class="stage-hint">launch · watch the path</div>
+    </div>
+    <div class="sim-panel">
+      <p class="eyebrow">7.9 km/s = perfect orbit</p>
+      <h2>Satellites Orbiting Earth</h2>
+      <p class="desc">A satellite is just a projectile going sideways so fast that it keeps missing the Earth as it falls.<br><br>Too slow → crashes. Too fast → escapes. Find the sweet spot. Real orbital speed is about 7.9 km/s — adjust the slider to feel why.</p>
+      <div class="controls">
+        <div>
+          <span class="ctrl-label">Launch speed</span>
+          <div class="ctrl-row">
+            <input type="range" id="sat-spd" min="1" max="14" step=".1" value="6.5">
+            <span class="ctrl-val" id="sat-spd-v">6.5</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="sat-launch">🚀 Launch</button>
+          <button class="btn" id="sat-reset">Reset</button>
+        </div>
+        <div class="readout"><span id="sat-status">Set speed and launch.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SIM 5: Spacetime Fabric (BONUS) ══ -->
+<section class="sim-section">
+  <span class="sim-label">05 — Bonus · Einstein</span>
+  <div class="sim-split">
+    <div class="sim-stage" id="stage-fabric">
+      <canvas id="c-fabric"></canvas>
+      <div class="stage-hint">drag the heavy mass</div>
+    </div>
+    <div class="sim-panel">
+      <span class="bonus-badge">Extra Knowledge · Beyond Class 9</span>
+      <p class="eyebrow" style="margin-top:12px">General Relativity</p>
+      <h2>Einstein's Spacetime Fabric</h2>
+      <p class="desc">Newton said gravity is a force. Einstein revealed it's a geometry: mass warps the fabric of spacetime, and nearby objects simply follow the curves — like a marble rolling into a dent on a rubber sheet.<br><br>Drag the heavy mass around. The grid warps around it, and the small orbiting mass follows the curvature — not a "pull".</p>
+      <div class="controls">
+        <div>
+          <span class="ctrl-label">Mass (warping strength)</span>
+          <div class="ctrl-row">
+            <input type="range" id="fab-mass" min="15" max="90" step="1" value="55">
+            <span class="ctrl-val" id="fab-mass-v">55</span>
           </div>
         </div>
       </div>
@@ -82,119 +180,7 @@
   </div>
 </section>
 
-<!-- 2. Falling objects -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">02 — Free fall</span>
-      <h2>Objects falling toward Earth</h2>
-      <p>Drop a feather and a hammer — with air, the feather loses. Turn air off, and every object falls at exactly the same rate: 9.8 m/s².</p>
-    </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-fall"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Click "Drop objects" to release a stone, a feather, and a ball together. Toggle air resistance and watch what changes.</p>
-        <div class="controls">
-          <div class="row">
-            <button class="btn primary" id="fall-drop">Drop objects</button>
-            <button class="btn" id="fall-air">Air resistance: ON</button>
-          </div>
-          <div class="readout" id="fall-readout">
-            <span>time: <b>0.00 s</b></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 3. Attraction between two masses -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">03 — Newton's law of gravitation</span>
-      <h2>Attraction between two masses</h2>
-      <p>F = G·m₁·m₂ / r² — bigger masses pull harder, and doubling the distance cuts the pull to a quarter.</p>
-    </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-masses"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Drag either ball. The arrow shows the pull each feels from the other — thicker and brighter means a stronger force.</p>
-        <div class="controls">
-          <div>
-            <label>Mass A</label>
-            <div class="row"><input type="range" id="mA" min="1" max="10" step="0.5" value="4"><span class="val" id="mA-val">4</span></div>
-          </div>
-          <div>
-            <label>Mass B</label>
-            <div class="row"><input type="range" id="mB" min="1" max="10" step="0.5" value="6"><span class="val" id="mB-val">6</span></div>
-          </div>
-          <div class="readout" id="masses-readout">
-            <span>force: <b>—</b></span>
-            <span>distance: <b>—</b></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 4. Satellites -->
-<section class="section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">04 — Orbital velocity</span>
-      <h2>Satellites orbiting Earth</h2>
-      <p>Launch a satellite sideways. Too slow, and gravity wins — it crashes. Too fast, and it flies off into space. Just right, and it falls forever without ever landing.</p>
-    </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-sat"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Set the launch speed and fire. Find the exact speed that produces a clean circular orbit.</p>
-        <div class="controls">
-          <div>
-            <label>Launch speed</label>
-            <div class="row"><input type="range" id="sat-speed" min="1" max="12" step="0.1" value="6"><span class="val" id="sat-speed-val">6.0</span></div>
-          </div>
-          <div class="row">
-            <button class="btn primary" id="sat-launch">Launch satellite</button>
-            <button class="btn" id="sat-reset">Reset</button>
-          </div>
-          <div class="readout" id="sat-readout"><span id="sat-status">Ready on the pad.</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 5. Bonus: spacetime fabric -->
-<section class="section bonus-section">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="bonus-tag">Bonus · Extra knowledge</span>
-      <h2>Einstein's spacetime fabric</h2>
-      <p>This is beyond Class 9 syllabus, but it's the deeper picture: Einstein described gravity not as a pull, but as mass bending the fabric of space itself. Nearby objects simply roll along the curve.</p>
-    </div>
-    <div class="demo">
-      <div class="stage"><canvas id="c-fabric"></canvas></div>
-      <div class="info">
-        <h3>Try it</h3>
-        <p>Drag the heavy ball around the grid. Notice how it dents the fabric — and how the small ball orbits by rolling along that dent, not by being "pulled" in the usual sense.</p>
-        <div class="controls">
-          <div>
-            <label>Mass of the heavy ball</label>
-            <div class="row"><input type="range" id="fabric-mass" min="20" max="80" step="1" value="50"><span class="val" id="fabric-mass-val">50</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer>Physics Lab · Gravitation — bend, fall, and orbit your way through the concepts</footer>
+<footer>PhysicsVerse · Gravitation — five simulations, one force</footer>
 
 <script src="gravitation.js"></script>
 </body>
