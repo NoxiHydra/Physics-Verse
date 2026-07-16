@@ -20,6 +20,7 @@ function mkCanvas(id) {
 let audioCtx = null;
 function ac() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
 
@@ -51,6 +52,10 @@ function ac() {
 
   document.getElementById('vib-strike').addEventListener('click', strike);
   document.getElementById('stage-vib').addEventListener('click', strike);
+  document.getElementById('vib-reset').addEventListener('click', () => {
+    strikeT = -1; ripples.length = 0;
+    document.getElementById('vib-status').textContent = 'Waiting for a strike…';
+  });
 
   let t = 0;
   function draw() {
@@ -151,6 +156,12 @@ function ac() {
     playing = !playing;
     e.target.textContent = playing ? '⏸ Pause' : '▶ Resume';
   });
+  document.getElementById('prop-reset').addEventListener('click', () => {
+    freq = 1.5; t = 0; playing = true;
+    document.getElementById('prop-freq').value = 1.5;
+    document.getElementById('prop-freq-v').textContent = '1.5';
+    const pb = document.getElementById('prop-pause'); if (pb) pb.textContent = '⏸ Pause';
+  });
 
   function draw() {
     if (playing) t += 0.035 * freq;
@@ -233,8 +244,8 @@ function ac() {
 
   document.getElementById('wave-play').addEventListener('click', e => {
     const a = ac();
-    if (playing) {
-      if (osc) { osc.stop(); osc = null; gain = null; }
+    if (playing && osc) {
+      osc.stop(); osc = null; gain = null;
       playing = false;
       e.target.textContent = '🔊 Play tone';
     } else {
@@ -248,6 +259,13 @@ function ac() {
       playing = true;
       e.target.textContent = '🔇 Stop tone';
     }
+  });
+  document.getElementById('wave-reset').addEventListener('click', () => {
+    amp = 50; freq = 3; t = 0;
+    if (osc) { try { osc.stop(); } catch(e){} osc = null; gain = null; playing = false; }
+    document.getElementById('amp').value = 50; document.getElementById('amp-v').textContent = '50';
+    document.getElementById('freq').value = 3; document.getElementById('freq-v').textContent = '3.0';
+    const wb = document.getElementById('wave-play'); if (wb) wb.textContent = '🔊 Play tone';
   });
 
   function draw() {
@@ -311,38 +329,45 @@ function ac() {
     wallDist = parseFloat(e.target.value);
     document.getElementById('echo-dist-v').textContent = wallDist + ' m';
   });
+  document.getElementById('echo-reset').addEventListener('click', () => {
+    wallDist = 30; rings.length = 0; returning.length = 0; shouted = false;
+    document.getElementById('echo-dist').value = 30;
+    document.getElementById('echo-dist-v').textContent = '30 m';
+    document.getElementById('echo-status').textContent = 'Ready.';
+  });
 
   document.getElementById('echo-shout').addEventListener('click', () => {
-    // play a short burst
+    const a = ac();
+    const now = a.currentTime;
+
+    // Original shout — short burst
     try {
-      const a = ac();
       const o = a.createOscillator();
       const g = a.createGain();
       o.frequency.value = 600;
       o.type = 'sawtooth';
-      g.gain.setValueAtTime(0.15, a.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.15);
+      g.gain.setValueAtTime(0.18, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
       o.connect(g); g.connect(a.destination);
-      o.start(); o.stop(a.currentTime + 0.15);
-
-      // schedule echo only if >= 17 m
-      if (wallDist >= 17) {
-        const delay = (wallDist * 2) / SOUND_SPEED;
-        setTimeout(() => {
-          try {
-            const a2 = ac();
-            const o2 = a2.createOscillator();
-            const g2 = a2.createGain();
-            o2.frequency.value = 580;
-            o2.type = 'sine';
-            g2.gain.setValueAtTime(0.08, a2.currentTime);
-            g2.gain.exponentialRampToValueAtTime(0.001, a2.currentTime + 0.12);
-            o2.connect(g2); g2.connect(a2.destination);
-            o2.start(); o2.stop(a2.currentTime + 0.12);
-          } catch(e) {}
-        }, delay * 1000);
-      }
+      o.start(now); o.stop(now + 0.18);
     } catch(e) {}
+
+    // Echo — only if wall is far enough (>= 17 m)
+    if (wallDist >= 17) {
+      const delay = (wallDist * 2) / SOUND_SPEED;
+      const echoTime = now + Math.min(delay, 1.8);
+      try {
+        const o2 = a.createOscillator();
+        const g2 = a.createGain();
+        o2.frequency.value = 580;
+        o2.type = 'sine';
+        g2.gain.setValueAtTime(0.0001, echoTime);
+        g2.gain.linearRampToValueAtTime(0.10, echoTime + 0.01);
+        g2.gain.exponentialRampToValueAtTime(0.001, echoTime + 0.16);
+        o2.connect(g2); g2.connect(a.destination);
+        o2.start(echoTime); o2.stop(echoTime + 0.16);
+      } catch(e) {}
+    }
 
     const canEcho = wallDist >= 17;
     pulses.push({
@@ -510,6 +535,24 @@ function ac() {
   document.getElementById('ear-send').addEventListener('click', () => {
     progress = 0;
     statusEl.textContent = STAGES[0];
+    const a = ac();
+    const now = a.currentTime;
+    try {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.frequency.setValueAtTime(400, now);
+      o.frequency.exponentialRampToValueAtTime(800, now + 1.2);
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(0.12, now + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+      o.connect(g); g.connect(a.destination);
+      o.start(now); o.stop(now + 1.4);
+    } catch(e) {}
+  });
+  document.getElementById('ear-reset').addEventListener('click', () => {
+    progress = -1;
+    statusEl.textContent = 'Waiting…';
   });
 
   let t = 0;
@@ -628,9 +671,12 @@ function ac() {
     // ── Traveling pulse ──
     if (progress >= 0 && progress < 1) {
       const waypoints = [
+        [w * 0.06, cy],
         [w * 0.14, cy],
         [w * 0.34, cy],
         [pts[0][0], pts[0][1]],
+        [pts[1][0], pts[1][1]],
+        [pts[2][0], pts[2][1]],
         [pts[3][0], pts[3][1]],
         [w * 0.57, cy],
         [ccX, ccY],

@@ -142,12 +142,13 @@ function darkenColor(hex, amt) {
   let dragIdx = -1, cloudT = 0;
 
   const PLANETS = [
-    { name:'Mercury', a:.12, b:.09, period:.24, color:'#a89b8c', r:3.5, trail:[], bands:[], craters:[{x:.3,y:-.2,r:.28},{x:-.4,y:.3,r:.2},{x:.1,y:.4,r:.15}], atmoColor:'rgba(180,160,140,0.1)' },
-    { name:'Venus',   a:.20, b:.15, period:.62, color:'#c8a96e', r:4.8, trail:[], bands:[{r:210,g:180,b:120,a:.25,y:-.3,h:.15}], atmosphere:true, atmoColor:'rgba(220,180,100,0.2)' },
-    { name:'Earth',   a:.29, b:.23, period:1.0, color:'#2a6fa8', r:5.2, trail:[], bands:[{r:60,g:160,b:90,a:.45,y:.2,h:.18},{r:60,g:160,b:90,a:.35,y:-.25,h:.12}], atmosphere:true, atmoColor:'rgba(80,160,255,0.22)' },
-    { name:'Mars',    a:.38, b:.30, period:1.88,color:'#b5472a', r:3.8, trail:[], craters:[{x:.2,y:-.3,r:.22},{x:-.3,y:.2,r:.18}], atmoColor:'rgba(200,80,30,0.1)' },
-    { name:'Jupiter', a:.48, b:.38, period:4.5, color:'#c9956c', r:8.5, trail:[], bands:[{r:195,g:140,b:90,a:.5,y:0,h:.09},{r:220,g:190,b:150,a:.4,y:.18,h:.08},{r:185,g:120,b:70,a:.5,y:-.18,h:.07},{r:200,g:160,b:110,a:.35,y:.32,h:.06}], atmoColor:'rgba(200,150,100,0.15)' },
+    { name:'Mercury', angle:0.5, a:.12, b:.09, period:.24, color:'#a89b8c', r:3.5, trail:[], bands:[], craters:[{x:.3,y:-.2,r:.28},{x:-.4,y:.3,r:.2},{x:.1,y:.4,r:.15}], atmoColor:'rgba(180,160,140,0.1)' },
+    { name:'Venus',   angle:2.1, a:.20, b:.15, period:.62, color:'#c8a96e', r:4.8, trail:[], bands:[{r:210,g:180,b:120,a:.25,y:-.3,h:.15}], atmosphere:true, atmoColor:'rgba(220,180,100,0.2)' },
+    { name:'Earth',   angle:4.0, a:.29, b:.23, period:1.0, color:'#2a6fa8', r:5.2, trail:[], bands:[{r:60,g:160,b:90,a:.45,y:.2,h:.18},{r:60,g:160,b:90,a:.35,y:-.25,h:.12}], atmosphere:true, atmoColor:'rgba(80,160,255,0.22)' },
+    { name:'Mars',    angle:1.3, a:.38, b:.30, period:1.88,color:'#b5472a', r:3.8, trail:[], craters:[{x:.2,y:-.3,r:.22},{x:-.3,y:.2,r:.18}], atmoColor:'rgba(200,80,30,0.1)' },
+    { name:'Jupiter', angle:5.5, a:.48, b:.38, period:4.5, color:'#c9956c', r:8.5, trail:[], bands:[{r:195,g:140,b:90,a:.5,y:0,h:.09},{r:220,g:190,b:150,a:.4,y:.18,h:.08},{r:185,g:120,b:70,a:.5,y:-.18,h:.07},{r:200,g:160,b:110,a:.35,y:.32,h:.06}], atmoColor:'rgba(200,150,100,0.15)' },
   ];
+  const ORIG = PLANETS.map(p => ({ a:p.a, b:p.b, period:p.period, angle:p.angle }));
 
   const orbitReadout = document.getElementById('orbit-readout');
 
@@ -163,6 +164,11 @@ function darkenColor(hex, amt) {
     PLANETS.forEach(p=>p.trail=[]);
     e.target.textContent = 'Trails: '+(showTrails?'ON':'OFF');
   });
+  document.getElementById('orbit-reset').addEventListener('click',()=>{
+    PLANETS.forEach((p,i)=>{ p.a=ORIG[i].a; p.b=ORIG[i].b; p.period=ORIG[i].period; p.angle=ORIG[i].angle; p.trail=[]; });
+    speed=1; document.getElementById('orbit-spd').value=1; document.getElementById('orbit-spd-v').textContent='1.0\u00d7';
+    orbitReadout.innerHTML='<span>Drag a planet to change its orbit</span>';
+  });
 
   // Drag
   function ptToRel(e) {
@@ -174,9 +180,8 @@ function darkenColor(hex, amt) {
     const w=c.width,h=c.height;
     const cx=w/2,cy=h/2,sc=Math.min(w,h);
     PLANETS.forEach((p,i)=>{
-      const a=t/p.period*Math.PI*2;
-      const px=(cx+Math.cos(a)*p.a*sc)/w, py=(cy+Math.sin(a)*p.b*sc)/h;
-      if(Math.hypot(pt.x-px,pt.y-py)<0.05){ dragIdx=i; }
+      const px=(cx+Math.cos(p.angle)*p.a*sc)/w, py=(cy+Math.sin(p.angle)*p.b*sc)/h;
+      if(Math.hypot(pt.x-px,pt.y-py)<0.05){ dragIdx=i; p.trail=[]; }
     });
   });
   window.addEventListener('pointermove', e=>{
@@ -190,6 +195,7 @@ function darkenColor(hex, amt) {
     p.a=Math.max(.07,Math.min(.52,r));
     p.b=p.a*.78;
     p.period=Math.pow(p.a,1.5)*4;
+    p.angle=Math.atan2(dy,dx);
     orbitReadout.innerHTML=`<span>Dragging <b>${p.name}</b> · radius <b>${(p.a*100).toFixed(0)}</b> · period <b>${p.period.toFixed(2)} yr</b></span>`;
   });
   window.addEventListener('pointerup',()=>{ dragIdx=-1; });
@@ -207,7 +213,7 @@ function darkenColor(hex, amt) {
   }
 
   function draw(){
-    if(!paused){t+=.006*speed; cloudT+=.003*speed;}
+    if(!paused){t+=.006*speed; cloudT+=.003*speed; PLANETS.forEach(p=>{ p.angle+=.006*speed/p.period*Math.PI*2; });}
     const w=c.width,h=c.height;
     ctx.clearRect(0,0,w,h);
     // deep space bg
@@ -237,7 +243,7 @@ function darkenColor(hex, amt) {
       ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);ctx.stroke();
       ctx.setLineDash([]);
 
-      const a=t/p.period*Math.PI*2;
+      const a=p.angle;
       const px=cx+Math.cos(a)*rx, py=cy+Math.sin(a)*ry;
 
       if(showTrails){
@@ -279,6 +285,9 @@ function darkenColor(hex, amt) {
   });
   document.getElementById('fall-air').addEventListener('click',e=>{
     airOn=!airOn;e.target.textContent='Air: '+(airOn?'ON':'OFF');
+  });
+  document.getElementById('fall-reset').addEventListener('click',()=>{
+    OBJ.forEach(o=>{o.y=0;o.vy=0;});elapsed=0;dropping=false;document.getElementById('fall-t').textContent='0.00 s';
   });
 
   function drawEarth(cx,cy,r){
@@ -364,6 +373,11 @@ function darkenColor(hex, amt) {
 
   document.getElementById('mA').addEventListener('input',e=>{mA=parseFloat(e.target.value);document.getElementById('mA-v').textContent=mA;});
   document.getElementById('mB').addEventListener('input',e=>{mB=parseFloat(e.target.value);document.getElementById('mB-v').textContent=mB;});
+  document.getElementById('masses-reset').addEventListener('click',()=>{
+    mA=5;mB=7;posA={x:.3,y:.5};posB={x:.7,y:.5};
+    document.getElementById('mA').value=5;document.getElementById('mA-v').textContent='5';
+    document.getElementById('mB').value=7;document.getElementById('mB-v').textContent='7';
+  });
 
   function getXY(e){
     const r=c.getBoundingClientRect();
@@ -525,6 +539,9 @@ function darkenColor(hex, amt) {
   let dragging=false,orbAngle=0;
 
   document.getElementById('fab-mass').addEventListener('input',e=>{mass=parseFloat(e.target.value);document.getElementById('fab-mass-v').textContent=mass;});
+  document.getElementById('fab-reset').addEventListener('click',()=>{
+    mass=55;heavy={x:.5,y:.5};document.getElementById('fab-mass').value=55;document.getElementById('fab-mass-v').textContent='55';
+  });
 
   const stage=document.getElementById('stage-fabric');
   stage.addEventListener('pointerdown',()=>dragging=true);

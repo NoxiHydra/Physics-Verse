@@ -46,7 +46,10 @@ input[type="range"]::-webkit-slider-thumb { background: var(--gold); box-shadow:
       <h2>Vibrating Objects Produce Sound</h2>
       <p class="desc">Every sound begins with something moving back and forth. A tuning fork's prongs vibrate hundreds of times per second, pushing and pulling the air around them into a wave.<br><br>Strike it and watch the wave fronts spread outward. The wave dies away as the fork loses energy.</p>
       <div class="controls">
-        <button class="btn btn-primary" id="vib-strike">Strike the fork</button>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="vib-strike">Strike the fork</button>
+          <button class="btn" id="vib-reset">Reset</button>
+        </div>
         <div class="readout" id="vib-readout"><span id="vib-status">Waiting for a strike…</span></div>
       </div>
     </div>
@@ -75,6 +78,7 @@ input[type="range"]::-webkit-slider-thumb { background: var(--gold); box-shadow:
         </div>
         <div class="btn-row">
           <button class="btn" id="prop-pause">⏸ Pause</button>
+          <button class="btn" id="prop-reset">Reset</button>
         </div>
       </div>
     </div>
@@ -110,6 +114,7 @@ input[type="range"]::-webkit-slider-thumb { background: var(--gold); box-shadow:
         </div>
         <div class="btn-row">
           <button class="btn" id="wave-play">🔊 Play tone</button>
+          <button class="btn" id="wave-reset">Reset</button>
         </div>
       </div>
     </div>
@@ -136,7 +141,10 @@ input[type="range"]::-webkit-slider-thumb { background: var(--gold); box-shadow:
             <span class="ctrl-val" id="echo-dist-v">30 m</span>
           </div>
         </div>
-        <button class="btn btn-primary" id="echo-shout">📣 Shout!</button>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="echo-shout">📣 Shout!</button>
+          <button class="btn" id="echo-reset">Reset</button>
+        </div>
         <div class="readout"><span id="echo-status">Ready.</span></div>
       </div>
     </div>
@@ -156,7 +164,10 @@ input[type="range"]::-webkit-slider-thumb { background: var(--gold); box-shadow:
       <h2>How the Human Ear Hears</h2>
       <p class="desc">Sound funnels through the <strong>pinna</strong> → bounces off the <strong>eardrum</strong> → three tiny bones (<strong>ossicles</strong>) amplify it → the <strong>cochlea</strong> converts vibration to electrical signals → the <strong>auditory nerve</strong> carries them to the brain.<br><br>Send a sound in and trace the full journey.</p>
       <div class="controls">
-        <button class="btn btn-primary" id="ear-send">Send a sound in</button>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="ear-send">Send a sound in</button>
+          <button class="btn" id="ear-reset">Reset</button>
+        </div>
         <div class="readout"><span id="ear-status">Waiting…</span></div>
       </div>
     </div>
